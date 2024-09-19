@@ -1,9 +1,9 @@
 import os
 import sys
+import time
 from typing import Type
 
 import numpy as np
-import time
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -18,7 +18,7 @@ class RandomAgent:
         return np.random.choice(available_actions)
 
 
-def play_episodes(env, agent, num_episodes: int = 1000) -> PerformanceMetrics:
+def play_episodes(env, agent, num_episodes: int = 100000) -> PerformanceMetrics:
     metrics = PerformanceMetrics()
     start_time = time.time()
 

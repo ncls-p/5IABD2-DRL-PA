@@ -4,6 +4,7 @@ import numpy as np
 
 from src.environments import Environment
 
+
 class LineWorld(Environment):
     def __init__(self, size: int = 7):
         """
@@ -218,3 +219,26 @@ class LineWorld(Environment):
         env = LineWorld(size)
         env.state = np.random.randint(0, size)
         return env
+
+    def state_vector(self) -> np.ndarray:
+        """
+        Get the current state of the environment as a vector encoding.
+
+        Returns:
+            np.ndarray: The vector encoding of the current state.
+        """
+        return np.array([self.state])
+
+    def action_vector(self, action: int) -> np.ndarray:
+        """
+        Get the vector encoding of the given action.
+
+        Args:
+            action (int): The action to encode.
+
+        Returns:
+            np.ndarray: The vector encoding of the action.
+        """
+        action_vector = np.zeros(2, dtype=int)
+        action_vector[action] = 1
+        return action_vector
