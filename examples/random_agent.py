@@ -10,6 +10,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.environments.grid_world import GridWorld
 from src.environments.line_world import LineWorld
 from src.environments.tic_tac_toe import TicTacToe
+from src.environments.farkle import Farkle
 from src.metrics.performance_metrics import PerformanceMetrics, calculate_metrics
 
 
@@ -44,7 +45,9 @@ def play_episodes(env, agent, num_episodes: int = 100000) -> PerformanceMetrics:
     return metrics
 
 
-def run_random_agent(env_class: Type[LineWorld | GridWorld | TicTacToe], env_name: str):
+def run_random_agent(
+    env_class: Type[LineWorld | GridWorld | TicTacToe | Farkle], env_name: str
+):
     env = env_class()
     agent = RandomAgent()
 
@@ -72,5 +75,6 @@ if __name__ == "__main__":
         (LineWorld, "LineWorld"),
         (GridWorld, "GridWorld"),
         (TicTacToe, "TicTacToe"),
+        (Farkle, "Farkle"),
     ]:
         run_random_agent(env_class, env_name)
