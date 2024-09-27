@@ -19,7 +19,9 @@ class RandomAgent:
         return np.random.choice(available_actions)
 
 
-def play_episodes(env, agent, num_episodes: int = 100000) -> PerformanceMetrics:
+def play_episodes(
+    env, agent1, agent2, num_episodes: int = 100000
+) -> PerformanceMetrics:
     metrics = PerformanceMetrics()
     start_time = time.time()
 
@@ -29,11 +31,26 @@ def play_episodes(env, agent, num_episodes: int = 100000) -> PerformanceMetrics:
         total_reward = 0
         episode_length = 0
 
+        # Randomize which agent plays first
+        if isinstance(env, (TicTacToe, Farkle)):
+            current_agent = np.random.choice([agent1, agent2])
+        else:
+            current_agent = agent1
+
         while not done:
-            action = agent.choose_action(env.available_actions())
-            _, reward, done, _ = env.step(action)
+            action = current_agent.choose_action(env.available_actions())
+            _, reward, done, info = env.step(action)
             total_reward += reward
             episode_length += 1
+
+            if isinstance(env, (Farkle, TicTacToe)):
+                current_agent = agent2 if current_agent == agent1 else agent1
+
+        if isinstance(env, TicTacToe):
+            # For TicTacToe, we use the final scores instead of the cumulative reward
+            total_reward = (
+                env.score()[0] - env.score()[1]
+            )  # Player 1 score - Player 2 score
 
         metrics.add_episode(total_reward, episode_length)
 
@@ -49,12 +66,18 @@ def run_random_agent(
     env_class: Type[LineWorld | GridWorld | TicTacToe | Farkle], env_name: str
 ):
     env = env_class()
-    agent = RandomAgent()
+    agent1 = RandomAgent()
+    agent2 = RandomAgent()
 
-    print(f"\nTesting Random Agent on {env_name}")
+    print(f"\nTesting Random Agents on {env_name}")
     print("=" * 40)
 
-    metrics = play_episodes(env, agent)
+    if isinstance(env, (Farkle, TicTacToe)):
+        metrics = play_episodes(env, agent1, agent2)
+    else:
+        metrics = play_episodes(
+            env, agent1, agent1
+        )  # Use the same agent for non-Farkle games
 
     print(f"Average Score: {metrics.get_average_score():.2f}")
     print(f"Average Episode Length: {metrics.get_average_length():.2f}")

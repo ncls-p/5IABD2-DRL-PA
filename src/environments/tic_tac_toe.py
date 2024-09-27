@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 
 import numpy as np
 
@@ -13,7 +13,7 @@ class TicTacToe(Environment):
         self.board = np.zeros((3, 3), dtype=int)
         self.current_player = 1
         self.done = False
-        self.score_value = 0
+        self.scores = [0, 0]  # Scores for player 1 and player 2
 
     def render(self) -> None:
         """
@@ -113,7 +113,7 @@ class TicTacToe(Environment):
         self.board = np.zeros((3, 3), dtype=int)
         self.current_player = 1
         self.done = False
-        self.score_value = 0
+        self.scores = [0, 0]
         return self.state_id()
 
     def display(self) -> None:
@@ -174,6 +174,7 @@ class TicTacToe(Environment):
         if self._check_win(self.board):
             reward = 1 if self.current_player == 1 else -1
             self.done = True
+            self.scores[self.current_player - 1] += reward
         elif np.all(self.board != 0):
             reward = 0
             self.done = True
@@ -181,17 +182,21 @@ class TicTacToe(Environment):
             reward = 0
             self.current_player = 3 - self.current_player  # Switch player
 
-        self.score_value += reward
-        return self.state_id(), reward, self.done, {}
+        return (
+            self.state_id(),
+            reward,
+            self.done,
+            {"current_player": self.current_player},
+        )
 
-    def score(self) -> float:
+    def score(self) -> List[int]:
         """
-        Get the current score value.
+        Get the current score values for both players.
 
         Returns:
-            float: The current score value.
+            List[int]: The current score values for player 1 and player 2.
         """
-        return self.score_value
+        return self.scores
 
     @staticmethod
     def from_random_state() -> "TicTacToe":

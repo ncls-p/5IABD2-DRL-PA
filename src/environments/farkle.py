@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import List, Tuple
 
 import numpy as np
 
@@ -6,9 +6,13 @@ from src.environments import Environment
 
 
 class Farkle(Environment):
-    def __init__(self):
+    def __init__(self, target_score=10000, use_variations=True):
         """
         Initialize the Farkle environment.
+
+        Args:
+            target_score (int): The score required to win the game.
+            use_variations (bool): Whether to use scoring variations.
         """
         self.dice = np.zeros(6, dtype=int)
         self.current_score = 0
@@ -17,6 +21,10 @@ class Farkle(Environment):
         self.score_value = 0
         self.turn_score = 0
         self.hot_dice = False
+        self.target_score = target_score
+        self.use_variations = use_variations
+        self.current_player = 1  # Add this line to track the current player
+        self.scores = [0, 0]  # Scores for player 1 and player 2
 
     def render(self) -> None:
         """
@@ -82,11 +90,12 @@ class Farkle(Environment):
         """
         self.dice = np.random.randint(1, 7, size=6)
         self.current_score = 0
-        self.total_score = 0
+        self.scores = [0, 0]
         self.done = False
         self.score_value = 0
         self.turn_score = 0
         self.hot_dice = False
+        self.current_player = 1  # Reset current player
         return self.state_id()
 
     def display(self) -> None:
@@ -95,7 +104,8 @@ class Farkle(Environment):
         """
         print(f"Dice: {self.dice}")
         print(f"Current turn score: {self.turn_score}")
-        print(f"Total score: {self.total_score}")
+        print(f"Player 1 score: {self.scores[0]}")
+        print(f"Player 2 score: {self.scores[1]}")
 
     def is_forbidden(self, action: int) -> int:
         """
@@ -143,20 +153,38 @@ class Farkle(Environment):
             Tuple[int, float, bool, dict]: The next state ID, reward, done flag, and additional info.
         """
         if self.done:
-            return self.state_id(), 0, True, {}
+            return self.state_id(), 0, True, {"current_player": self.current_player}
 
         if action == 0:  # Bank points
-            self.total_score += self.turn_score
-            self.current_score = self.total_score
+            self.scores[self.current_player - 1] += self.turn_score
+            self.current_score = self.scores[self.current_player - 1]
             self.turn_score = 0
             self.dice = np.random.randint(1, 7, size=6)
             self.hot_dice = False
-            return self.state_id(), self.total_score / 10000, False, {}
+            self.current_player = 3 - self.current_player  # Switch player
+
+            # Check for game end
+            if max(self.scores) >= self.target_score:
+                self.done = True
+                winner = 1 if self.scores[0] >= self.target_score else 2
+                return (
+                    self.state_id(),
+                    self.scores[winner - 1] / self.target_score,
+                    True,
+                    {"current_player": self.current_player, "winner": winner},
+                )
+
+            return (
+                self.state_id(),
+                self.current_score / self.target_score,
+                False,
+                {"current_player": self.current_player},
+            )
 
         kept_dice = self._action_to_kept_dice(action)
         if not self._is_valid_keep(kept_dice):
             self.done = True
-            return self.state_id(), -1, True, {}
+            return self.state_id(), -1, True, {"current_player": self.current_player}
 
         score = self._calculate_score(kept_dice)
         self.turn_score += score
@@ -171,21 +199,22 @@ class Farkle(Environment):
         if self._is_farkle():
             self.done = True
             self.turn_score = 0
-            return self.state_id(), -1, True, {}
+            self.current_player = 3 - self.current_player  # Switch player
+            return self.state_id(), -1, True, {"current_player": self.current_player}
 
         reward = score / 1000  # Normalize the reward
         self.score_value += reward
 
-        return self.state_id(), reward, False, {}
+        return self.state_id(), reward, False, {"current_player": self.current_player}
 
-    def score(self) -> float:
+    def score(self) -> List[int]:
         """
-        Get the current score value.
+        Get the current score values for both players.
 
         Returns:
-            float: The current score value.
+            List[int]: The current score values for player 1 and player 2.
         """
-        return self.score_value
+        return self.scores
 
     @staticmethod
     def from_random_state() -> "Farkle":
@@ -302,7 +331,9 @@ class Farkle(Environment):
         Returns:
             np.ndarray: The vector encoding of the current state.
         """
-        return np.concatenate([self.dice, [self.current_score, self.total_score]])
+        return np.concatenate(
+            [self.dice, self.scores, [self.turn_score, self.current_player]]
+        )
 
     def action_vector(self, action: int) -> np.ndarray:
         """

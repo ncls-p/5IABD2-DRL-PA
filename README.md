@@ -15,14 +15,28 @@ This project implements various reinforcement learning algorithms and environmen
 
 ## Getting Started
 
-1. Clone the repository
-2. Create a virtual environment: `python -m venv .venv`
-3. Activate the virtual environment:
+1. Ensure you have Python 3.12.4 installed on your system.
+2. Clone the repository
+3. Create a virtual environment: `python3.12 -m venv .venv`
+4. Activate the virtual environment:
    - On Windows: `.venv\Scripts\activate`
    - On macOS and Linux: `source .venv/bin/activate`
-4. Install dependencies: `pip install -r requirements.txt`
-5. Run tests: `pytest tests/`
+5. Install dependencies: `pip install -r requirements.txt`
+6. Run tests: `pytest tests/`
 
 ## Usage
 
-(To be added as the project develops)
+To run the project:
+
+1. Activate the virtual environment (if not already activated)
+2. Navigate to the project root directory
+3. Run a specific example or script, e.g.:
+   ```
+   python examples/train_agent.py
+   ```
+   or
+   ```
+   python examples/play_game.py
+   ```
+
+(More detailed usage instructions to be added as the project develops)
