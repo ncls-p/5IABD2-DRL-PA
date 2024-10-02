@@ -161,7 +161,7 @@ class PlayerAgent:
             ["┌─────────┐", "│         │", "│    ●    │", "│         │", "└─────────┘"],
             # ⚁
             [
-                "┌────────���┐",
+                "┌────────┐",
                 "│  ●      │",
                 "│         │",
                 "│      ●  │",
@@ -290,6 +290,13 @@ def play_game(
         elif isinstance(env, TicTacToe):
             console.print(display_tic_tac_toe(env))
             if env.current_player == human_player:
+                console.print(
+                    Panel(
+                        f"Available actions: {env.available_actions()}",
+                        title="Actions",
+                        expand=False,
+                    )
+                )
                 action = player_agent.choose_action(env.available_actions(), env)
                 console.print(f"[bold cyan]You chose action: {action}[/]")
             else:
@@ -302,6 +309,13 @@ def play_game(
                 console.print(display_line_world(env))
             else:
                 console.print(display_grid_world(env))
+            console.print(
+                Panel(
+                    f"Available actions: {env.available_actions()}",
+                    title="Actions",
+                    expand=False,
+                )
+            )
             action = player_agent.choose_action(env.available_actions(), env)
             action_names = ["Up", "Right", "Down", "Left"]
             console.print(f"[bold cyan]You moved: {action_names[action]}[/]")
@@ -315,9 +329,6 @@ def play_game(
                 console.print(
                     Panel("Unable to render state", title="Current State", expand=False)
                 )
-            action = player_agent.choose_action(env.available_actions(), env)
-
-        if not isinstance(env, Farkle):
             console.print(
                 Panel(
                     f"Available actions: {env.available_actions()}",
@@ -325,6 +336,7 @@ def play_game(
                     expand=False,
                 )
             )
+            action = player_agent.choose_action(env.available_actions(), env)
 
         _, reward, done, info = env.step(action)
 
