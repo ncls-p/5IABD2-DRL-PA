@@ -1,14 +1,15 @@
 import os
+import re
 import sys
 from typing import Type
 
 import numpy as np
+from rich import box
 from rich.columns import Columns
 from rich.console import Console, Group
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
-from rich import box
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -20,14 +21,18 @@ from src.metrics.performance_metrics import PerformanceMetrics
 
 console = Console()
 
+
 class RandomAgent:
     def choose_action(self, available_actions: np.ndarray) -> int:
         return np.random.choice(available_actions)
 
+
 class PlayerAgent:
     def choose_action(self, available_actions: np.ndarray, env) -> int:
         if isinstance(env, Farkle):
-            return self.choose_farkle_action(available_actions, env.dice)
+            return self.choose_farkle_action(
+                available_actions, env.dice[env.current_player - 1]
+            )
         elif isinstance(env, TicTacToe):
             return self.choose_tic_tac_toe_action(available_actions)
         elif isinstance(env, LineWorld):
@@ -70,23 +75,7 @@ class PlayerAgent:
                 )
 
     def choose_grid_world_action(self, available_actions: np.ndarray) -> int:
-        console.print(
-            "[bold cyan]Enter direction (Z: up, Q: left, S: down, D: right):[/]"
-        )
-        while True:
-            action = console.input("[bold cyan]Your move: [/]").lower()
-            if action == "z" and 0 in available_actions:
-                return 0  # Up
-            elif action == "q" and 3 in available_actions:
-                return 3  # Left
-            elif action == "s" and 2 in available_actions:
-                return 2  # Down
-            elif action == "d" and 1 in available_actions:
-                return 1  # Right
-            else:
-                console.print(
-                    "[bold red]Invalid move. Please choose a valid direction.[/]"
-                )
+        return self.choose_zqsd_action(available_actions, None)
 
     def choose_farkle_action(
         self, available_actions: np.ndarray, dice: np.ndarray
@@ -94,7 +83,7 @@ class PlayerAgent:
         while True:
             console.print(
                 Panel(
-                    "0: Bank points\n1-6: Keep specific dice",
+                    "0: Bank points\nEnter dice numbers (1-6) to keep specific dice.",
                     title="Options",
                     expand=False,
                 )
@@ -102,29 +91,28 @@ class PlayerAgent:
 
             action = console.input(
                 "[bold cyan]Enter your action[/] (0 to bank, or dice numbers to keep, e.g., '136' to keep 1st, 3rd, and 6th dice): "
-            )
+            ).strip()
 
             if action == "0":
                 return 0  # Bank points
 
-            try:
-                kept_dice = [int(d) for d in action if d in "123456"]
-                kept_dice = list(set(kept_dice))  # Remove duplicates
-                if not kept_dice:
-                    console.print(
-                        "[bold red]Invalid input. Please enter valid dice numbers.[/]"
-                    )
-                    continue
+            kept_dice = re.findall(r"[1-6]", action)
+            kept_dice = [int(d) for d in kept_dice]
+            kept_dice = list(set(kept_dice))  # Remove duplicates
 
-                binary_action = sum(2 ** (i - 1) for i in kept_dice)
-                if binary_action in available_actions:
-                    return binary_action
-                else:
-                    console.print(
-                        "[bold red]Invalid action. Please choose from available actions.[/]"
-                    )
-            except ValueError:
-                console.print("[bold red]Please enter valid numbers.[/]")
+            if not kept_dice:
+                console.print(
+                    "[bold red]Invalid input. Please enter valid dice numbers between 1 and 6.[/]"
+                )
+                continue
+
+            binary_action = sum(2 ** (i - 1) for i in kept_dice)
+            if binary_action in available_actions:
+                return binary_action
+            else:
+                console.print(
+                    "[bold red]Invalid action. The selected dice do not form a valid scoring combination. Please choose again.[/]"
+                )
 
     def choose_tic_tac_toe_action(self, available_actions: np.ndarray) -> int:
         while True:
@@ -157,23 +145,18 @@ class PlayerAgent:
     @staticmethod
     def format_dice(dice: np.ndarray) -> str:
         dice_faces = [
-            # ⚀
+            # Dice faces representations
             ["┌─────────┐", "│         │", "│    ●    │", "│         │", "└─────────┘"],
-            # ⚁
             [
-                "┌────────┐",
+                "┌─────────┐",
                 "│  ●      │",
                 "│         │",
                 "│      ●  │",
                 "└─────────┘",
             ],
-            # ⚂
             ["┌─────────┐", "│  ●      │", "│    ●    │", "│      ●  │", "└─────────┘"],
-            # ⚃
             ["┌─────────┐", "│  ●   ●  │", "│         │", "│  ●   ●  │", "└─────────┘"],
-            # ⚄
             ["┌─────────┐", "│  ●   ●  │", "│    ●    │", "│  ●   ●  │", "└─────────┘"],
-            # ⚅
             ["┌─────────┐", "│  ●   ●  │", "│  ●   ●  │", "│  ●   ●  │", "└─────────┘"],
         ]
 
@@ -200,6 +183,7 @@ ENVIRONMENT_INSTRUCTIONS = {
     "You will be randomly assigned as Player 1 or Player 2.\n"
     "Aim to score points without 'farkling' (rolling no scoring dice).",
 }
+
 
 def display_line_world(env: LineWorld):
     table = Table(show_header=False, box=box.SQUARE)
@@ -228,7 +212,7 @@ def display_grid_world(env: GridWorld):
             elif (x, y) == env.goal:
                 row.append("🏁")  # Goal icon
             else:
-                row.append("  ")  # Empty space (two spaces for better alignment)
+                row.append("  ")  # Empty space
         table.add_row(*row)
         if y < env.size - 1:
             table.add_row(*["─" * 2 for _ in range(env.size)])
@@ -266,20 +250,19 @@ def play_game(
     total_reward = 0
     episode_length = 0
 
-    # Randomize which player goes first for Tic-Tac-Toe and Farkle
     if isinstance(env, (TicTacToe, Farkle)):
         human_player = np.random.choice([1, 2])
-        env.current_player = 1  # Always start with Player 1
+        env.current_player = 1
         console.print(f"[bold cyan]You are Player {human_player}[/]")
     else:
         human_player = 1
 
-    while not done:
-        if isinstance(env, Farkle):
+    if isinstance(env, Farkle):
+        while not done:
             display_farkle_state(env)
             if env.current_player == human_player:
                 action = player_agent.choose_farkle_action(
-                    env.available_actions(), env.dice
+                    env.available_actions(), env.dice[env.current_player - 1]
                 )
                 console.print(f"[bold cyan]You chose action: {action}[/]")
             else:
@@ -287,7 +270,34 @@ def play_game(
                 console.print(
                     f"[bold yellow]AI Player {env.current_player} chose action: {action}[/]"
                 )
-        elif isinstance(env, TicTacToe):
+
+            # Take the action and get the result
+            _, reward, done, info = env.step(action)
+
+            # Update total_reward only for the human player
+            if env.current_player == human_player:
+                total_reward += reward
+
+            # Check if the turn ended (either by banking or farkling)
+            if info.get("turn_ended", False):
+                console.print(
+                    f"[bold magenta]Turn ended for Player {3 - env.current_player}[/]"
+                )
+                console.print(f"[bold magenta]Reward: {reward}[/]")
+
+            # Check for game end condition
+            if done:
+                winner = info.get("winner")
+                if winner:
+                    if winner == human_player:
+                        console.print("[bold green]You win![/]")
+                    else:
+                        console.print(f"[bold red]You lose. Player {winner} wins.[/]")
+                else:
+                    console.print("[bold yellow]It's a tie![/]")
+                break
+    elif isinstance(env, TicTacToe):
+        while not done:
             console.print(display_tic_tac_toe(env))
             if env.current_player == human_player:
                 console.print(
@@ -304,7 +314,23 @@ def play_game(
                 console.print(
                     f"[bold yellow]AI Player {env.current_player} chose action: {action}[/]"
                 )
-        elif isinstance(env, (LineWorld, GridWorld)):
+
+            _, reward, done, info = env.step(action)
+            total_reward += reward
+            episode_length += 1
+
+            if done:
+                winner = env.winner
+                if winner:
+                    if winner == human_player:
+                        console.print("[bold green]You win![/]")
+                    else:
+                        console.print(f"[bold red]You lose. Player {winner} wins.[/]")
+                else:
+                    console.print("[bold yellow]It's a tie![/]")
+                break
+    else:
+        while not done:
             if isinstance(env, LineWorld):
                 console.print(display_line_world(env))
             else:
@@ -319,59 +345,26 @@ def play_game(
             action = player_agent.choose_action(env.available_actions(), env)
             action_names = ["Up", "Right", "Down", "Left"]
             console.print(f"[bold cyan]You moved: {action_names[action]}[/]")
+
+            _, reward, done, info = env.step(action)
+            total_reward += reward
+            episode_length += 1
+
+        console.print("\n[bold green]Game Over![/] Final state:")
+        if isinstance(env, LineWorld):
+            console.print(display_line_world(env))
         else:
-            rendered_state = env.render()
-            if rendered_state is not None:
-                console.print(
-                    Panel(str(rendered_state), title="Current State", expand=False)
-                )
-            else:
-                console.print(
-                    Panel("Unable to render state", title="Current State", expand=False)
-                )
-            console.print(
-                Panel(
-                    f"Available actions: {env.available_actions()}",
-                    title="Actions",
-                    expand=False,
-                )
-            )
-            action = player_agent.choose_action(env.available_actions(), env)
-
-        _, reward, done, info = env.step(action)
-
-        total_reward += reward
-        episode_length += 1
-
-        console.print(f"[bold magenta]Reward: {reward}[/]")
-
-        # Remove the redundant display for TicTacToe
-        if isinstance(env, Farkle):
-            display_farkle_state(env)
-            if done:
-                winner = info.get("winner")
-                if winner:
-                    console.print(f"[bold green]Player {winner} wins![/]")
-                else:
-                    console.print("[bold yellow]It's a tie![/]")
+            console.print(display_grid_world(env))
+        console.print(f"[bold blue]Total reward: {total_reward}[/]")
+        console.print(f"[bold blue]Episode length: {episode_length}[/]")
+        metrics.add_episode(total_reward, episode_length)
+        return metrics
 
     console.print("\n[bold green]Game Over![/] Final state:")
     if isinstance(env, Farkle):
         display_farkle_state(env)
-    elif isinstance(env, LineWorld):
-        console.print(display_line_world(env))
-    elif isinstance(env, GridWorld):
-        console.print(display_grid_world(env))
     elif isinstance(env, TicTacToe):
         console.print(display_tic_tac_toe(env))
-    else:
-        rendered_state = env.render()
-        if rendered_state is not None:
-            console.print(Panel(str(rendered_state), title="Final State", expand=False))
-        else:
-            console.print(
-                Panel("Unable to render final state", title="Final State", expand=False)
-            )
 
     console.print(f"[bold blue]Total reward: {total_reward}[/]")
     console.print(f"[bold blue]Episode length: {episode_length}[/]")
@@ -380,7 +373,7 @@ def play_game(
     return metrics
 
 def display_farkle_state(env: Farkle):
-    dice_display = PlayerAgent.format_dice(env.dice)
+    dice_display = PlayerAgent.format_dice(env.dice[env.current_player - 1])
     turn_score = f"Current turn score: {env.turn_score}"
     player1_score = f"Player 1 score: {env.scores[0]}"
     player2_score = f"Player 2 score: {env.scores[1]}"
@@ -443,7 +436,7 @@ def main():
 
     console.print(table)
 
-    choice = console.input("[bold cyan]Enter your choice (1-4): [/]")
+    choice = console.input("[bold cyan]Enter your choice (1-4): [/]").strip()
 
     if choice in environments:
         env_class, env_name = environments[choice]

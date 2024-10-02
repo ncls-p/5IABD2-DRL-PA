@@ -7,7 +7,7 @@ class PerformanceMetrics:
     def __init__(self):
         self.scores = []
         self.episode_lengths = []
-        self.episodes_per_second = 0  # Ajoutez cette ligne
+        self.episodes_per_second = 0
 
     def add_episode(self, score, length):
         self.scores.append(score)
