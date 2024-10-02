@@ -160,7 +160,13 @@ class PlayerAgent:
             # ⚀
             ["┌─────────┐", "│         │", "│    ●    │", "│         │", "└─────────┘"],
             # ⚁
-            ["┌─────────┐", "│  ●      │", "│         │", "│      ●  │", "└─────────┘"],
+            [
+                "┌────────���┐",
+                "│  ●      │",
+                "│         │",
+                "│      ●  │",
+                "└─────────┘",
+            ],
             # ⚂
             ["┌─────────┐", "│  ●      │", "│    ●    │", "│      ●  │", "└─────────┘"],
             # ⚃
@@ -327,7 +333,7 @@ def play_game(
 
         console.print(f"[bold magenta]Reward: {reward}[/]")
 
-        # Display the state after each action for Farkle and TicTacToe
+        # Remove the redundant display for TicTacToe
         if isinstance(env, Farkle):
             display_farkle_state(env)
             if done:
@@ -336,8 +342,6 @@ def play_game(
                     console.print(f"[bold green]Player {winner} wins![/]")
                 else:
                     console.print("[bold yellow]It's a tie![/]")
-        elif isinstance(env, TicTacToe):
-            console.print(display_tic_tac_toe(env))
 
     console.print("\n[bold green]Game Over![/] Final state:")
     if isinstance(env, Farkle):
