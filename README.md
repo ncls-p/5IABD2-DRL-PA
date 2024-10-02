@@ -168,3 +168,118 @@ Key methods:
 The `player_agent.py` script allows you to interactively play any of the provided environments.
 
 To run the script:
+```
+python player_agent.py
+```
+
+#### Instructions:
+1. Choose an Environment: When prompted, enter the number corresponding to the environment you want to play.
+```bash
+Choose an environment to play
+
+   ┏━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┓
+   ┃ Key  ┃ Environment            ┃
+   ┡━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━┩
+   │ 1    │ LineWorld              │
+   │ 2    │ GridWorld              │
+   │ 3    │ TicTacToe              │
+   │ 4    │ Farkle                 │
+   └──────┴────────────────────────┘
+
+   Enter your choice (1-4):
+```
+2. Follow Game Instructions: Each environment will display specific instructions or prompts.
+3. Input Actions: Enter your moves or decisions as instructed by the game.
+
+#### Example: Playing Farkle
+
+- Dice Representation: The dice will be displayed along with their positions (1-6).
+
+- Choosing Actions:
+   - Bank Points: Enter 0 to bank your current turn score.
+   - Keep Dice: Enter the dice numbers you wish to keep (e.g., 136 to keep dice 1, 3, and 6).
+- Game Progress: The game will display updates after each action, including your score, turn score, and the current player's turn.
+
+
+### Running Random Agents with random_agent.py
+
+The random_agent.py script runs simulations where random agents play against each other or interact with the environment randomly.
+
+To run the script:
+```bash
+python random_agent.py
+```
+
+What It Does:
+Simulates games across different environments.
+Collects performance metrics such as average score, episode length, and win rates.
+Outputs statistical data for analysis.
+
+#### Example Output
+```bash
+Testing Random Agents on TicTacToe
+========================================
+Average Score: 0.00
+Average Episode Length: 5.42
+Episodes per second: 12345.67
+Standard Deviation: 0.99
+Min Reward: -1.00
+Max Reward: 1.00
+Median Reward: 0.00
+TicTacToe-specific statistics:
+Agent1 win rate: 33.00%
+Agent2 win rate: 33.00%
+Tie rate: 34.00%
+```
+
+### Training Agents
+
+You can implement and train reinforcement learning agents to interact with these environments.
+
+#### Example:
+- Implement an Agent: Create a new agent class in the src/agents/ directory.
+- Train the Agent: Write a training script, such as train_agent.py, where your agent interacts with the environment.
+- Run the Training Script:
+```bash
+python examples/train_agent.py
+```
+
+**Note:** This project provides the environments and infrastructure for training agents but does not include pre-implemented training algorithms. You are encouraged to implement algorithms like Q-learning, SARSA, DQN, etc.
+
+---
+
+## Project Structure
+
+```bash
+.
+├── examples/
+│   ├── player_agent.py
+│   ├── random_agent.py
+├── src/
+│   ├── agents/
+│   ├── environments/
+│   │   ├── farkle.py
+│   │   ├── grid_world.py
+│   │   ├── line_world.py
+│   │   ├── tic_tac_toe.py
+│   │   └── __init__.py
+│   ├── metrics/
+│   │   └── performance_metrics.py
+│   ├── ui/
+│   └── utils/
+├── tests/
+│   ├── test_farkle.py
+│   ├── test_grid_world.py
+│   ├── test_line_world.py
+│   ├── test_tic_tac_toe.py
+├── README.md
+├── requirements.txt
+```
+- `examples/`: Scripts demonstrating how to interact with the environments.
+- `src/`:
+  - `agents/`: Implementations of various RL agents (to be added by the user).
+  - `environments/`: Definition of the game environments.
+  - `metrics/`: Tools for tracking and analyzing performance metrics.
+  - `ui/`: User interface components for game visualization.
+  - `utils/`: Utility functions and helpers.
+- `tests/`: Unit tests for validating the environments and other components.
