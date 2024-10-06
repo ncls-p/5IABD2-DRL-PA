@@ -66,6 +66,11 @@ Farkle is a dice game where players aim to be the first to score 10,000 points. 
 - **Setting Aside Dice**: Players must set aside at least one scoring die or combination after each throw.
 - **No Building**: Players cannot "build" on dice from previous throws (e.g., rolling two 1s, then rolling a third 1 doesn't count as three 1s).
 
+#### Reward Calculation
+- Banking points: `reward = turn_score / target_score`
+- Keeping dice: `reward = score / target_score`
+- Farkle (no scoring dice): `-1`
+
 #### Using the Farkle Environment
 
 The Farkle environment simulates the game, allowing agents to play against each other or interact with a human player.
@@ -92,6 +97,12 @@ Key methods:
 - `render()`: Displays the current board.
 - `available_actions()`: Returns the list of available moves.
 
+#### Reward Calculation
+- Win: `1.0`
+- Loss: `-1.0` (from the perspective of the other player)
+- Draw: `0.0`
+- Ongoing game / Invalid move: `0.0`
+
 ---
 
 ### GridWorld
@@ -106,6 +117,11 @@ Key methods:
 - `render()`: Displays the grid and the agent's position.
 - `available_actions()`: Returns the list of possible movements from the current position.
 
+#### Reward Calculation
+- Reaching the goal: `1.0`
+- Each step: `-1.0`
+- Invalid move: `0.0`
+
 ---
 
 ### LineWorld
@@ -119,6 +135,11 @@ Key methods:
 - `step(action)`: Moves the agent left or right.
 - `render()`: Displays the line with the agent's position.
 - `available_actions()`: Returns the list of valid moves (left or right).
+
+#### Reward Calculation
+- Reaching the goal: `1.0`
+- Each step: `-1.0`
+- Invalid move: `0.0`
 
 ---
 
