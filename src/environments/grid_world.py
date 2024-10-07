@@ -173,11 +173,28 @@ class GridWorld(Environment):
             raise ValueError(f"Invalid state: {new_state}")
 
     def state_vector(self) -> np.ndarray:
-        """Get the current state as a vector encoding."""
-        return np.array(self.state + self.goal)
+        """
+        Get the current state of the game as a vector encoding.
+
+        Returns:
+            np.ndarray: The vector encoding of the current state.
+        """
+        state_vector = np.zeros(self.size * self.size, dtype=int)
+        state_vector[self.state[1] * self.size + self.state[0]] = 1
+        goal_vector = np.zeros(self.size * self.size, dtype=int)
+        goal_vector[self.goal[1] * self.size + self.goal[0]] = 1
+        return np.concatenate([state_vector, goal_vector])
 
     def action_vector(self, action: int) -> np.ndarray:
-        """Get the vector encoding of the given action."""
+        """
+        Get the vector encoding of the given action.
+
+        Args:
+            action (int): The action to encode.
+
+        Returns:
+            np.ndarray: The vector encoding of the action.
+        """
         action_vector = np.zeros(4, dtype=int)
         action_vector[action] = 1
         return action_vector

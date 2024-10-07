@@ -375,7 +375,12 @@ class Farkle(Environment):
                 self.dice[0],
                 self.dice[1],
                 self.scores,
-                [self.turn_score, self.current_player],
+                [
+                    self.turn_score,
+                    self.current_player,
+                    int(self.hot_dice),
+                    int(self.final_round),
+                ],
             ]
         )
 
@@ -389,7 +394,15 @@ class Farkle(Environment):
         Returns:
             np.ndarray: The vector encoding of the action.
         """
-        return self._action_to_kept_dice(action)
+        if action == 0:
+            return np.zeros(7, dtype=int)  # Bank action
+        else:
+            return np.concatenate(
+                [
+                    [0],  # Not banking
+                    self._action_to_kept_dice(action),
+                ]
+            )
 
     def p(self, s: int, a: int, s_p: int, r_index: int) -> float:
         """

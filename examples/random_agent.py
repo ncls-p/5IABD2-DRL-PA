@@ -19,9 +19,7 @@ class RandomAgent:
         return np.random.choice(available_actions)
 
 
-def play_episodes(
-    env, agent1, agent2, num_episodes: int = 100000
-) -> PerformanceMetrics:
+def play_episodes(env, agent1, agent2, num_episodes: int = 1000) -> PerformanceMetrics:
     metrics = PerformanceMetrics()
     start_time = time.time()
 
@@ -82,7 +80,7 @@ def run_random_agent(
     agent1 = RandomAgent()
     agent2 = RandomAgent()
 
-    num_episodes = 1000  # Define the number of episodes
+    num_episodes = 1000
 
     print(f"\nTesting Random Agents on {env_name}")
     print("=" * 40)
@@ -96,7 +94,6 @@ def run_random_agent(
     episode_rewards = metrics.scores
     calculated_metrics = calculate_metrics(episode_rewards)
 
-    print(f"Standard Deviation: {calculated_metrics['std_dev']:.2f}")
     print(f"Min Reward: {calculated_metrics['min_reward']:.2f}")
     print(f"Max Reward: {calculated_metrics['max_reward']:.2f}")
     print(f"Median Reward: {calculated_metrics['median_reward']:.2f}")

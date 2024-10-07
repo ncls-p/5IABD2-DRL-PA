@@ -260,6 +260,10 @@ def play_game(
     if isinstance(env, Farkle):
         while not done:
             display_farkle_state(env)
+
+            # Print state vector
+            console.print(f"[bold blue]State vector: {env.state_vector()}[/]")
+
             if env.current_player == human_player:
                 action = player_agent.choose_farkle_action(
                     env.available_actions(), env.dice[env.current_player - 1]
@@ -270,6 +274,9 @@ def play_game(
                 console.print(
                     f"[bold yellow]AI Player {env.current_player} chose action: {action}[/]"
                 )
+
+            # Print action vector
+            console.print(f"[bold blue]Action vector: {env.action_vector(action)}[/]")
 
             # Take the action and get the result
             _, reward, done, info = env.step(action)
@@ -299,6 +306,10 @@ def play_game(
     elif isinstance(env, TicTacToe):
         while not done:
             console.print(display_tic_tac_toe(env))
+
+            # Print state vector
+            console.print(f"[bold blue]State vector: {env.state_vector()}[/]")
+
             if env.current_player == human_player:
                 console.print(
                     Panel(
@@ -314,6 +325,9 @@ def play_game(
                 console.print(
                     f"[bold yellow]AI Player {env.current_player} chose action: {action}[/]"
                 )
+
+            # Print action vector
+            console.print(f"[bold blue]Action vector: {env.action_vector(action)}[/]")
 
             _, reward, done, info = env.step(action)
             total_reward += reward
@@ -335,6 +349,10 @@ def play_game(
                 console.print(display_line_world(env))
             else:
                 console.print(display_grid_world(env))
+
+            # Print state vector
+            console.print(f"[bold blue]State vector: {env.state_vector()}[/]")
+
             console.print(
                 Panel(
                     f"Available actions: {env.available_actions()}",
@@ -345,6 +363,9 @@ def play_game(
             action = player_agent.choose_action(env.available_actions(), env)
             action_names = ["Up", "Right", "Down", "Left"]
             console.print(f"[bold cyan]You moved: {action_names[action]}[/]")
+
+            # Print action vector
+            console.print(f"[bold blue]Action vector: {env.action_vector(action)}[/]")
 
             _, reward, done, info = env.step(action)
             total_reward += reward
@@ -371,6 +392,7 @@ def play_game(
 
     metrics.add_episode(total_reward, episode_length)
     return metrics
+
 
 def display_farkle_state(env: Farkle):
     dice_display = PlayerAgent.format_dice(env.dice[env.current_player - 1])
@@ -419,6 +441,7 @@ def display_farkle_state(env: Farkle):
     )
     console.print(group)
 
+
 def main():
     environments = {
         "1": (LineWorld, "LineWorld"),
@@ -457,6 +480,7 @@ def main():
     console.print("\n[bold green]Game Statistics:[/]")
     console.print(f"[bold blue]Score: {metrics.get_average_score()}[/]")
     console.print(f"[bold blue]Episode Length: {metrics.get_average_length()}[/]")
+
 
 if __name__ == "__main__":
     main()

@@ -134,11 +134,27 @@ class LineWorld(Environment):
         return env
 
     def state_vector(self) -> np.ndarray:
-        """Get the current state as a vector encoding."""
-        return np.array([self.state, self.target_position])
+        """
+        Get the current state of the game as a vector encoding.
+
+        Returns:
+            np.ndarray: The vector encoding of the current state.
+        """
+        state_vector = np.zeros(self.size, dtype=int)
+        state_vector[self.state] = 1
+        state_vector = np.concatenate([state_vector, [self.target_position]])
+        return state_vector
 
     def action_vector(self, action: int) -> np.ndarray:
-        """Get the vector encoding of the given action."""
+        """
+        Get the vector encoding of the given action.
+
+        Args:
+            action (int): The action to encode.
+
+        Returns:
+            np.ndarray: The vector encoding of the action.
+        """
         action_vector = np.zeros(2, dtype=int)
         action_vector[action] = 1
         return action_vector

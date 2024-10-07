@@ -304,3 +304,61 @@ python examples/train_agent.py
   - `ui/`: User interface components for game visualization.
   - `utils/`: Utility functions and helpers.
 - `tests/`: Unit tests for validating the environments and other components.
+
+
+## Environnements disponibles
+
+### 1. LineWorld
+
+Un monde linéaire où l'agent doit atteindre une cible sur une ligne.
+
+- **Vecteur d'état** : Un tableau numpy de taille `size + 1`
+  - Les `size` premiers éléments représentent la position actuelle (1 pour la position actuelle, 0 ailleurs)
+  - Le dernier élément représente la position de la cible
+
+- **Vecteur d'action** : Un tableau numpy de taille 2
+  - [1, 0] pour aller à gauche
+  - [0, 1] pour aller à droite
+
+### 2. GridWorld
+
+Un monde en grille 2D où l'agent doit atteindre une cible.
+
+- **Vecteur d'état** : Un tableau numpy de taille `2 * size * size`
+  - Les `size * size` premiers éléments représentent la position actuelle (1 pour la position actuelle, 0 ailleurs)
+  - Les `size * size` éléments suivants représentent la position de la cible (1 pour la position de la cible, 0 ailleurs)
+
+- **Vecteur d'action** : Un tableau numpy de taille 4
+  - [1, 0, 0, 0] pour aller en haut
+  - [0, 1, 0, 0] pour aller à droite
+  - [0, 0, 1, 0] pour aller en bas
+  - [0, 0, 0, 1] pour aller à gauche
+
+### 3. TicTacToe
+
+Le jeu classique du morpion.
+
+- **Vecteur d'état** : Un tableau numpy de taille 9
+  - Chaque élément représente une case du plateau
+  - 0 pour une case vide, 1 pour le joueur 1, 2 pour le joueur 2
+
+- **Vecteur d'action** : Un tableau numpy de taille 9
+  - 1 pour la case choisie, 0 pour les autres cases
+
+### 4. Farkle
+
+Un jeu de dés où les joueurs doivent accumuler des points en gardant certains dés et en relançant les autres.
+
+- **Vecteur d'état** : Un tableau numpy de taille 18
+  - Les 6 premiers éléments représentent les dés du joueur 1
+  - Les 6 éléments suivants représentent les dés du joueur 2
+  - Les 2 éléments suivants représentent les scores des joueurs
+  - Les 4 derniers éléments représentent respectivement :
+    - Le score du tour actuel
+    - Le joueur actuel (1 ou 2)
+    - Si le joueur a des "hot dice" (0 ou 1)
+    - Si c'est le tour final (0 ou 1)
+
+- **Vecteur d'action** : Un tableau numpy de taille 7
+  - Pour l'action de banquer (conserver les points) : [0, 0, 0, 0, 0, 0, 0]
+  - Pour garder des dés : [0, x, x, x, x, x, x] où x est 1 si le dé est gardé, 0 sinon
