@@ -1,6 +1,8 @@
 import os
 import sys
 
+from matplotlib import pyplot as plt
+
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -8,6 +10,7 @@ from src.agents.deep_q_learning import DQNAgent
 from src.environments.line_world import LineWorld
 from src.environments.grid_world import GridWorld
 from src.environments.farkle import Farkle
+from src.environments.tic_tac_toe import TicTacToe
 
 def run_dqn_example(env_class, env_name, num_episodes=10000):
     env = env_class()
@@ -25,31 +28,34 @@ def run_dqn_example(env_class, env_name, num_episodes=10000):
     scores = agent.train(num_episodes=num_episodes)
 
     # Plot the learning curve
-    '''plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(10, 5))
     plt.plot(scores)
     plt.title(f"DQN Learning Curve - {env_name}")
     plt.xlabel("Episode")
     plt.ylabel("Score")
     plt.savefig(f"dqn_{env_name.lower().replace(' ', '_')}_learning_curve.png")
-    plt.close()'''
+    plt.close()
 
     return scores
 
 def main():
     # Run DQN on LineWorld
-    # line_world_scores = run_dqn_example(LineWorld, "Line World")
+    line_world_scores = run_dqn_example(LineWorld, "Line World")
 
     # Run DQN on GridWorld
     grid_world_scores = run_dqn_example(GridWorld, "Grid World")
 
     # Run DQN on Farkle
-    #farkle_scores = run_dqn_example(Farkle, "Farkle")
+    farkle_scores = run_dqn_example(Farkle, "Farkle")
+
+    # Run DQN on Tic Tac Toe
+    dqn_scores = run_dqn_example(TicTacToe, "Tic Tac Toe")
 
     # Print final average scores
     print("\nFinal Average Scores:")
-    # print(f"Line World: {sum(line_world_scores[-100:]) / 100:.2f}")
+    print(f"Line World: {sum(line_world_scores[-100:]) / 100:.2f}")
     print(f"Grid World: {sum(grid_world_scores[-100:]) / 100:.2f}")
-    # print(f"Farkle: {sum(farkle_scores[-100:]) / 100:.2f}")
-
+    print(f"Farkle: {sum(farkle_scores[-100:]) / 100:.2f}")
+    print(f"Tic Tac Toe: {sum(dqn_scores[-100:]) / 100:.2f}")
 if __name__ == "__main__":
     main()

@@ -1,22 +1,27 @@
 import logging
 import math
 import random
-from typing import Any, List
-
+from typing import Any, List, Optional
 import numpy as np
-
+from copy import deepcopy
 from ..environments.farkle import Farkle
 from src.environments import Environment
 
 logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 
 class MCTSNode:
-    def __init__(self, state: Any, parent=None):
+    def __init__(
+        self,
+        state: Any,
+        action: Optional[int] = None,
+        parent: Optional["MCTSNode"] = None,
+    ):
         self.state = state
+        self.action = action  # Action that led to this state
         self.parent = parent
         self.children: List[MCTSNode] = []
         self.visits = 0
@@ -27,92 +32,129 @@ class MCTSNode:
         return len(self.untried_actions) == 0
 
     def best_child(self, c_param: float = 1.414) -> "MCTSNode":
-        choices_weights = [
-            (c.value / c.visits)
-            + c_param * math.sqrt((2 * math.log(self.visits) / c.visits))
-            for c in self.children
-        ]
+        if not self.children:
+            raise ValueError("Node has no children")
+
+        choices_weights = []
+        for child in self.children:
+            if child.visits == 0:
+                exploitation = 0
+                exploration = float("inf")
+            else:
+                exploitation = child.value / child.visits
+                exploration = c_param * math.sqrt(
+                    2 * math.log(self.visits) / child.visits
+                )
+            choices_weights.append(exploitation + exploration)
+
         best_child_node = self.children[np.argmax(choices_weights)]
-        logger.debug(f"Best child selected with state: {best_child_node.state}")
+        logger.debug(f"Best child selected with action: {best_child_node.action}")
         return best_child_node
 
-    def rollout_policy(self, env: Environment) -> int:
-        action = random.choice(env.available_actions())
-        logger.debug(f"Rollout policy selected action: {action}")
-        return action
+    def add_child(self, state: Any, action: int) -> "MCTSNode":
+        child = MCTSNode(state=state, action=action, parent=self)
+        self.children.append(child)
+        return child
 
 
 class MCTSAgent:
-    def __init__(self, env: Environment, num_simulations: int = 1000):
+    def __init__(
+        self, env: Environment, num_simulations: int = 1000, max_depth: int = 50
+    ):
         self.env = env
         self.num_simulations = num_simulations
-        self.player = 1  # Initialize the player
+        self.max_depth = max_depth
+        self.player = 1
 
-    def choose_action(self, state: Any) -> int:
+    def copy_environment(self, env: Environment) -> Environment:
+        return deepcopy(env)
+
+    def simulate(self, env: Environment, max_steps: int = 50) -> float:
+        steps = 0
+        while not env.is_game_over() and steps < max_steps:
+            action = random.choice(env.available_actions())
+            _, reward, done, _ = env.step(action)
+            if done:  # Early stopping on game completion
+                break
+            steps += 1
+        return env.score()
+
+    def choose_action(self, state: Any, temperature: float = 0.0) -> int:
         root = MCTSNode(state)
         root.untried_actions = list(self.env.available_actions())
         logger.debug(f"Choosing action for state: {state}")
 
-        for _ in range(self.num_simulations):
+        for i in range(self.num_simulations):
             node = root
-            sim_env = self.env.__class__()  # Create a copy of the environment
-            sim_env.reset()
-            sim_env_state = sim_env.state_id()
-
-            # Synchronize the simulated environment state with the current state
-            while sim_env_state != state:
-                action = sim_env.available_actions()[0]
-                sim_env_state, _, _, _ = sim_env.step(action)
+            sim_env = self.copy_environment(self.env)
 
             # Selection
-            while not sim_env.is_game_over() and node.is_fully_expanded():
+            depth = 0
+            while (
+                not sim_env.is_game_over()
+                and node.is_fully_expanded()
+                and depth < self.max_depth
+            ):
                 node = node.best_child()
-                sim_env_state, _, done, _ = sim_env.step(node.state)
+                if node.action is not None:
+                    sim_env.step(node.action)
+                depth += 1
 
             # Expansion
-            if not sim_env.is_game_over():
+            if not sim_env.is_game_over() and not node.is_fully_expanded():
                 action = node.untried_actions.pop()
-                sim_env_state, _, done, _ = sim_env.step(action)
-                child = MCTSNode(sim_env_state, parent=node)
-                child.untried_actions = list(sim_env.available_actions())
-                node.children.append(child)
-                node = child
-                logger.debug(f"Expanded node with state: {child.state}")
+                next_state, _, done, _ = sim_env.step(action)
+                node = node.add_child(next_state, action)
+                node.untried_actions = list(sim_env.available_actions())
 
             # Simulation
-            while not sim_env.is_game_over():
-                action = node.rollout_policy(sim_env)
-                sim_env_state, _, done, _ = sim_env.step(action)
-                node = MCTSNode(sim_env_state, parent=node)
+            simulation_result = self.simulate(sim_env)
 
             # Backpropagation
             while node is not None:
                 node.visits += 1
-                scores = sim_env.score()
-                if isinstance(scores, list):
-                    node.value += scores[
-                        self.player - 1
-                    ]  # Use the score of the current player
-                else:
-                    node.value += scores
-                logger.debug(
-                    f"Backpropagating node with state: {node.state}, visits: {node.visits}, value: {node.value}"
-                )
+                node.value += simulation_result
                 node = node.parent
 
-        return root.best_child(c_param=0.0).state
+            if (i + 1) % 100 == 0:
+                logger.debug(f"Completed {i + 1} simulations")
+
+        # Select best action from root using temperature
+        if temperature == 0.0:
+            best_child = root.best_child(c_param=0.0)
+        else:
+            children_values = np.array(
+                [c.value / c.visits if c.visits > 0 else 0 for c in root.children],
+                dtype=np.float32,
+            )
+            probabilities = np.exp(children_values / temperature)
+            probabilities = probabilities / np.sum(probabilities)
+            best_child = root.children[
+                np.random.choice(len(root.children), p=probabilities)
+            ]
+
+        if best_child.action is None:
+            # Fallback to random action if no valid action found
+            available_actions = list(self.env.available_actions())
+            if not available_actions:
+                raise ValueError("No available actions")
+            return random.choice(available_actions)
+        # In choose_action()
+        logger.debug(
+            f"Selected action {best_child.action} with value {best_child.value/best_child.visits}"
+        )
+        return best_child.action
 
     def train(self, num_episodes: int = 1000) -> List[float]:
         scores = []
         for episode in range(num_episodes):
             state = self.env.reset()
             done = False
-            logger.info(f"Starting episode {episode + 1}/{num_episodes}")
             while not done:
                 action = self.choose_action(state)
                 state, reward, done, info = self.env.step(action)
                 if isinstance(self.env, Farkle):
-                    self.player = info["current_player"]  # Update the current player
+                    self.player = info["current_player"]
 
             episode_score = self.env.score()
             if isinstance(episode_score, list):
@@ -120,9 +162,9 @@ class MCTSAgent:
             else:
                 scores.append(episode_score)
 
-            if (episode + 1) % 100 == 0:
-                logger.info(
-                    f"Episode {episode + 1}/{num_episodes}, Avg Score: {np.mean(scores[-100:]):.2f}"
-                )
+            logger.info(
+                f"Episode {episode + 1}/{num_episodes}, "
+                f"Avg Score: {np.mean(scores[-100:]):.2f}"
+            )
 
         return scores

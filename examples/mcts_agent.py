@@ -9,6 +9,7 @@ from src.agents.mcts import MCTSAgent
 from src.environments.farkle import Farkle
 from src.environments.grid_world import GridWorld
 from src.environments.line_world import LineWorld
+from src.environments.tic_tac_toe import TicTacToe
 
 
 def run_mcts_example(env_class, env_name, num_simulations=100, num_episodes=1000):
@@ -30,7 +31,7 @@ def run_mcts_example(env_class, env_name, num_simulations=100, num_episodes=1000
 
 
 def main():
-    # Run MCTS on Farkle
+    # # Run MCTS on Farkle
     farkle_scores = run_mcts_example(
         Farkle, "Farkle", num_simulations=100, num_episodes=1000
     )
@@ -45,11 +46,16 @@ def main():
         GridWorld, "Grid World", num_simulations=100, num_episodes=1000
     )
 
+    # Run MCTS on Tic Tac Toe
+    mcts_scores = run_mcts_example(
+        TicTacToe, "Tic Tac Toe", num_simulations=100, num_episodes=1000
+    )
     # Print final average scores
     print("\nFinal Average Scores:")
     print(f"Farkle: {sum(farkle_scores[-100:]) / 100:.2f}")
     print(f"Line World: {sum(line_world_scores[-100:]) / 100:.2f}")
     print(f"Grid World: {sum(grid_world_scores[-100:]) / 100:.2f}")
+    print(f"Tic Tac Toe: {sum(mcts_scores[-100:]) / 100:.2f}")
 
 
 if __name__ == "__main__":
