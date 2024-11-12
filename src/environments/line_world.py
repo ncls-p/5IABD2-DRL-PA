@@ -112,8 +112,11 @@ class LineWorld(Environment):
             if self.state == self.target_position:
                 reward = 1.0
                 self.done = True
+            elif self.state == 0:
+                reward = -1
+                self.done = True
             else:
-                reward = -1.0
+                reward = 0
 
         self.score_value += reward
         return self.state_id(), reward, self.done, {}

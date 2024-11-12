@@ -11,6 +11,8 @@ class GridWorld(Environment):
         self.size = size
         self.state = (0, 0)
         self.goal = (size - 1, size - 1)
+        self.lose = (size - 1, 0)
+        self.wall = (1, 1)
         self.done = False
         self.score_value = 0
 
@@ -105,6 +107,14 @@ class GridWorld(Environment):
             return 1
         elif action == 3 and x == 0:  # left
             return 1
+        elif action == 0 and (x, y - 1) == self.wall:  # wall -> up
+            return 1
+        elif action == 1 and (x + 1, y) == self.wall:  # wall -> right
+            return 1
+        elif action == 2 and (x, y + 1) == self.wall:  # wall -> down
+            return 1
+        elif action == 3 and (x - 1, y) == self.wall:  # wall -> left
+            return 1
         else:
             return 0
 
@@ -139,11 +149,15 @@ class GridWorld(Environment):
                 x -= 1
             next_state = (x, y)
 
+            if next_state == self.lose:
+                reward = -1.0
+                self.done = True
+
             if next_state == self.goal:
                 reward = 1.0
                 self.done = True
             else:
-                reward = -1.0
+                reward = 0
 
             self.state = next_state
 
