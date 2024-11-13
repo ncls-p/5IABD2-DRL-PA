@@ -40,22 +40,24 @@ def run_dqn_example(env_class, env_name, num_episodes=10000):
 
 def main():
     # Run DQN on LineWorld
-    line_world_scores = run_dqn_example(LineWorld, "Line World")
+    # line_world_scores = run_dqn_example(LineWorld, "Line World")
 
     # Run DQN on GridWorld
-    grid_world_scores = run_dqn_example(GridWorld, "Grid World")
+    # grid_world_scores = run_dqn_example(GridWorld, "Grid World")
 
     # Run DQN on Farkle
     farkle_scores = run_dqn_example(Farkle, "Farkle")
 
     # Run DQN on Tic Tac Toe
-    dqn_scores = run_dqn_example(TicTacToe, "Tic Tac Toe")
+    # dqn_scores = run_dqn_example(TicTacToe, "Tic Tac Toe")
 
     # Print final average scores
     print("\nFinal Average Scores:")
-    print(f"Line World: {sum(line_world_scores[-100:]) / 100:.2f}")
-    print(f"Grid World: {sum(grid_world_scores[-100:]) / 100:.2f}")
+    # print(f"Line World: {sum(line_world_scores[-100:]) / 100:.2f}")
+    # print(f"Grid World: {sum(grid_world_scores[-100:]) / 100:.2f}")
     print(f"Farkle: {sum(farkle_scores[-100:]) / 100:.2f}")
-    print(f"Tic Tac Toe: {sum(dqn_scores[-100:]) / 100:.2f}")
+    # print(f"Tic Tac Toe: {sum(dqn_scores[-100:]) / 100:.2f}")
+
+
 if __name__ == "__main__":
     main()

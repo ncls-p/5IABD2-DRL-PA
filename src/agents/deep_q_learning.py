@@ -102,18 +102,20 @@ class DQNAgent:
             if episode % target_update_freq == 0:
                 self.update_target_network()
 
-            if (episode + 1) % 100 == 0:
-                print(f"Episode {episode + 1}/{num_episodes}, Avg Score: {np.mean(scores[-100:]):.2f}")
+            if (episode + 1) % 10 == 0:
+                print(
+                    f"Episode {episode + 1}/{num_episodes}, Avg Score: {np.mean(scores[-100:]):.5f}"
+                )
 
         return scores
 
     def learn(self, experiences):
         states, actions, rewards, next_states, dones = zip(*experiences)
-        states = torch.FloatTensor(states)
+        states = torch.FloatTensor(np.array(states))
         actions = torch.LongTensor(actions).unsqueeze(1)
         rewards = torch.FloatTensor(rewards)
         #print(rewards)
-        next_states = torch.FloatTensor(next_states)
+        next_states = torch.FloatTensor(np.array(next_states))
         dones = torch.FloatTensor(dones)
 
         # Compute current Q-values

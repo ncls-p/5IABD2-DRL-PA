@@ -13,10 +13,7 @@ class Farkle(Environment):
         Args:
             target_score (int): The score required to win the game.
         """
-        self.dice = [
-            np.zeros(6, dtype=int),
-            np.zeros(6, dtype=int),
-        ]  # Dice for both players
+        self.dice = np.zeros(6, dtype=int)
         self.current_score = 0
         self.total_score = 0
         self.done = False
@@ -60,7 +57,7 @@ class Farkle(Environment):
         Returns:
             int: The number of rewards.
         """
-        return 3  # Farkle (-1), Continue (0), Score (1)
+        return 3  # Lose (-1), No score (0), Win (1)
 
     def reward(self, i: int) -> float:
         """
@@ -72,7 +69,7 @@ class Farkle(Environment):
         Returns:
             float: The reward value.
         """
-        rewards = [-1.0, 0.0, 1.0]
+        rewards = [-1.0, 0, 1.0]
         return rewards[i]
 
     def state_id(self) -> int:
@@ -82,7 +79,7 @@ class Farkle(Environment):
         Returns:
             int: The current state ID.
         """
-        return self._dice_to_int(self.dice[self.current_player - 1])
+        return self._dice_to_int(self.dice)
 
     def reset(self) -> int:
         """
@@ -91,7 +88,7 @@ class Farkle(Environment):
         Returns:
             int: The initial state ID.
         """
-        self.dice = [np.random.randint(1, 7, size=6) for _ in range(2)]
+        self.dice = np.random.randint(1, 7, size=6)
         self.current_score = 0
         self.scores = [0, 0]
         self.done = False
@@ -107,8 +104,7 @@ class Farkle(Environment):
         """
         Display the current state of the environment.
         """
-        print(f"Player 1 Dice: {self.dice[0]}")
-        print(f"Player 2 Dice: {self.dice[1]}")
+        print(f"Dice: {self.dice}")
         print(f"Current turn score: {self.turn_score}")
         print(f"Player 1 score: {self.scores[0]}")
         print(f"Player 2 score: {self.scores[1]}")
@@ -143,7 +139,7 @@ class Farkle(Environment):
             np.ndarray: An array of available actions (1 to max_action - 1 for keeping dice, 0 for banking).
         """
         actions = [0]
-        num_dice = len(self.dice[self.current_player - 1])
+        num_dice = len(self.dice)
         max_action = 2**num_dice
         for a in range(1, max_action):
             if not self.is_forbidden(a):
@@ -161,18 +157,24 @@ class Farkle(Environment):
             Tuple[int, float, bool, dict]: The next state ID, reward, done flag, and additional info.
         """
         if self.done:
+            reward = (
+                1.0
+                if self.scores[self.current_player - 1] >= self.target_score
+                else -1.0
+            )
             return (
                 self.state_id(),
-                0,
+                reward,
                 True,
-                {"current_player": self.current_player, "turn_ended": False},
+                {"current_player": self.current_player},
             )
+
+        reward = 0.0  # Default reward for non-terminal steps
 
         if action == 0:  # Bank points
             self.scores[self.current_player - 1] += self.turn_score
-            reward = self.turn_score / self.target_score
             self.turn_score = 0
-            self.dice[self.current_player - 1] = np.random.randint(1, 7, size=6)
+            self.dice = np.random.randint(1, 7, size=6)
             self.hot_dice = False
 
             if (
@@ -187,22 +189,19 @@ class Farkle(Environment):
             if self.final_round and self.current_player == self.final_round_starter:
                 self.done = True
                 winner = 1 if self.scores[0] >= self.scores[1] else 2
+                reward = 1.0 if winner == self.current_player else -1.0
                 return (
                     self.state_id(),
                     reward,
                     True,
-                    {
-                        "current_player": self.current_player,
-                        "winner": winner,
-                        "turn_ended": True,
-                    },
+                    {"current_player": self.current_player},
                 )
 
             return (
                 self.state_id(),
                 reward,
                 False,
-                {"current_player": self.current_player, "turn_ended": True},
+                {"current_player": self.current_player},
             )
 
         kept_dice = self._action_to_kept_dice(action)
@@ -210,36 +209,26 @@ class Farkle(Environment):
         if not self._is_valid_keep(kept_dice):
             self.turn_score = 0
             self.current_player = 3 - self.current_player
-            # Start next player's turn with 6 dice
-            self.dice[self.current_player - 1] = np.random.randint(1, 7, size=6)
+            self.dice = np.random.randint(1, 7, size=6)
             return (
                 self.state_id(),
-                -1,
+                reward,
                 False,
-                {"current_player": self.current_player, "turn_ended": True},
+                {"current_player": self.current_player},
             )
 
         score = self._calculate_score(kept_dice)
         self.turn_score += score
 
-        remaining_dice = len(self.dice[self.current_player - 1]) - np.sum(kept_dice)
+        remaining_dice = len(self.dice) - np.sum(kept_dice)
         if remaining_dice == 0:
             self.hot_dice = True
             remaining_dice = 6
 
         # Roll the remaining dice
-        self.dice[self.current_player - 1] = np.random.randint(
-            1, 7, size=remaining_dice
-        )
+        self.dice = np.random.randint(1, 7, size=remaining_dice)
 
-        reward = score / self.target_score
-
-        return (
-            self.state_id(),
-            reward,
-            False,
-            {"current_player": self.current_player, "turn_ended": False},
-        )
+        return self.state_id(), reward, False, {"current_player": self.current_player}
 
     def score(self) -> List[int]:
         """
@@ -284,7 +273,7 @@ class Farkle(Environment):
         Returns:
             np.ndarray: The kept dice array.
         """
-        num_dice = len(self.dice[self.current_player - 1])
+        num_dice = len(self.dice)
         return np.array([(action & (1 << i)) > 0 for i in range(num_dice)], dtype=bool)
 
     def _is_valid_keep(self, kept_dice: np.ndarray) -> bool:
@@ -299,10 +288,10 @@ class Farkle(Environment):
         """
         if np.sum(kept_dice) == 0:
             return False
-        dice_values = self.dice[self.current_player - 1][kept_dice]
+        dice_values = self.dice[kept_dice]
         if len(dice_values) == 0:
             return False
-        if len(dice_values) == len(self.dice[self.current_player - 1]):
+        if len(dice_values) == len(self.dice):
             # Only allow keeping all dice if it's a straight or three pairs
             dice_counts = np.bincount(dice_values, minlength=7)[1:]
             if not (
@@ -315,7 +304,7 @@ class Farkle(Environment):
 
     def _calculate_score(self, kept_dice: np.ndarray) -> int:
         score = 0
-        dice_values = self.dice[self.current_player - 1][kept_dice.astype(bool)]
+        dice_values = self.dice[kept_dice.astype(bool)]
         if len(dice_values) == 0:
             return 0
         dice_counts = np.bincount(dice_values, minlength=7)[1:]
@@ -347,12 +336,7 @@ class Farkle(Environment):
         Returns:
             bool: True if the roll is a farkle, False otherwise.
         """
-        return (
-            self._calculate_score(
-                np.ones(len(self.dice[self.current_player - 1]), dtype=int)
-            )
-            == 0
-        )
+        return self._calculate_score(np.ones(len(self.dice), dtype=int)) == 0
 
     def _has_scoring_dice(self) -> bool:
         """
@@ -365,44 +349,34 @@ class Farkle(Environment):
 
     def state_vector(self) -> np.ndarray:
         """
-        Get the current state of the game as a vector encoding.
+        Get the simplified state vector for MDP algorithms.
 
         Returns:
-            np.ndarray: The vector encoding of the current state.
+            np.ndarray: The state vector containing essential information.
         """
-        return np.concatenate(
+        # Counts of each dice value (1-6)
+        dice_counts = np.bincount(self.dice, minlength=7)[1:]
+        # State vector with essential information
+        state = np.concatenate(
             [
-                self.dice[0],
-                self.dice[1],
-                self.scores,
-                [
-                    self.turn_score,
-                    self.current_player,
-                    int(self.hot_dice),
-                    int(self.final_round),
-                ],
+                dice_counts,  # Dice counts
+                [self.turn_score],  # Current turn score
+                [self.scores[self.current_player - 1]],  # Current player's total score
             ]
         )
+        return state.astype(float)
 
-    def action_vector(self, action: int) -> np.ndarray:
+    def action_vector(self, action: int) -> int:
         """
-        Get the vector encoding of the given action.
+        Represent the action as an integer index.
 
         Args:
-            action (int): The action to encode.
+            action (int): The action index.
 
         Returns:
-            np.ndarray: The vector encoding of the action.
+            int: The action index.
         """
-        if action == 0:
-            return np.zeros(7, dtype=int)  # Bank action
-        else:
-            return np.concatenate(
-                [
-                    [0],  # Not banking
-                    self._action_to_kept_dice(action),
-                ]
-            )
+        return action
 
     def p(self, s: int, a: int, s_p: int, r_index: int) -> float:
         """
@@ -431,7 +405,7 @@ class Farkle(Environment):
             reroll_count = 6
 
         # Check if the next state is possible given the action
-        if not np.all(next_dice[:reroll_count] == current_dice[kept_dice == 0]):
+        if not np.all(next_dice[:reroll_count] == current_dice[kept_dice is False]):
             return 0.0
 
         # Calculate the probability of rolling the specific dice values

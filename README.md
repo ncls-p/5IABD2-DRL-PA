@@ -221,7 +221,6 @@ Choose an environment to play
    - Keep Dice: Enter the dice numbers you wish to keep (e.g., 136 to keep dice 1, 3, and 6).
 - Game Progress: The game will display updates after each action, including your score, turn score, and the current player's turn.
 
-
 ### Running Random Agents with random_agent.py
 
 The random_agent.py script runs simulations where random agents play against each other or interact with the environment randomly.
@@ -276,18 +275,24 @@ python examples/train_agent.py
 ├── examples/
 │   ├── player_agent.py
 │   ├── random_agent.py
+│   ├── mcts_agent.py
+│   ├── deep_q_learning_agent.py
 ├── src/
 │   ├── agents/
+│   │   ├── __init__.py
+│   │   ├── deep_q_learning.py
+│   │   ├── mcts.py
 │   ├── environments/
+│   │   ├── __init__.py
 │   │   ├── farkle.py
 │   │   ├── grid_world.py
 │   │   ├── line_world.py
 │   │   ├── tic_tac_toe.py
-│   │   └── __init__.py
 │   ├── metrics/
 │   │   └── performance_metrics.py
 │   ├── ui/
-│   └── utils/
+│   │   └── game_viewer.py
+│   ├── utils/
 ├── tests/
 │   ├── test_farkle.py
 │   ├── test_grid_world.py
@@ -304,7 +309,6 @@ python examples/train_agent.py
   - `ui/`: User interface components for game visualization.
   - `utils/`: Utility functions and helpers.
 - `tests/`: Unit tests for validating the environments and other components.
-
 
 ## Environnements disponibles
 
@@ -346,19 +350,15 @@ Le jeu classique du morpion.
   - 1 pour la case choisie, 0 pour les autres cases
 
 ### 4. Farkle
-
 Un jeu de dés où les joueurs doivent accumuler des points en gardant certains dés et en relançant les autres.
 
-- **Vecteur d'état** : Un tableau numpy de taille 18
-  - Les 6 premiers éléments représentent les dés du joueur 1
-  - Les 6 éléments suivants représentent les dés du joueur 2
-  - Les 2 éléments suivants représentent les scores des joueurs
-  - Les 4 derniers éléments représentent respectivement :
-    - Le score du tour actuel
-    - Le joueur actuel (1 ou 2)
-    - Si le joueur a des "hot dice" (0 ou 1)
-    - Si c'est le tour final (0 ou 1)
+- **Vecteur d'état** : Un tableau numpy de taille 8
 
-- **Vecteur d'action** : Un tableau numpy de taille 7
-  - Pour l'action de banquer (conserver les points) : [0, 0, 0, 0, 0, 0, 0]
-  - Pour garder des dés : [0, x, x, x, x, x, x] où x est 1 si le dé est gardé, 0 sinon
+  - Les 6 premiers éléments représentent le nombre de chaque valeur de dé (1 à 6) dans le lancer actuel.
+  - Le 7ᵉ élément représente le score du tour actuel.
+  - Le 8ᵉ élément représente le score total du joueur actuel.
+
+- **Vecteur d'action** : Un entier représentant l'action choisie :
+
+  - 0 pour banquer (conserver les points accumulés et terminer le tour).
+  - Un entier de 1 à 63 représentant les différentes combinaisons de dés à garder (il y a 2^6 - 1 = 63 combinaisons possibles en gardant au moins un dé).
