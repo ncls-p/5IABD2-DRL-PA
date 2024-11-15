@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 import random
 from collections import deque
+from typing import Any, List
 from src.environments import Environment
 
 # Q-Network for estimating Q-values
@@ -34,9 +35,8 @@ class ReplayBuffer:
     def __len__(self):
         return len(self.memory)
 
-# DQN Agent
-class DQNAgent:
-    def __init__(self, env: Environment, state_size: int, action_size: int, batch_size=16, gamma=0.95, lr=0.0005, buffer_size=1000):
+class DoubleDQNAgent:
+    def __init__(self, env: Environment, state_size: int, action_size: int, batch_size=64, gamma=0.99, lr=0.001, buffer_size=10000):
         self.env = env
         self.state_size = state_size
         self.action_size = action_size
@@ -50,16 +50,18 @@ class DQNAgent:
         self.target_network = QNetwork(state_size, action_size)
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=lr)
 
-        # Copy weights from the Q-network to the target network
+        # Copy weights from the Q-network to the target network initially
         self.update_target_network()
 
         # Replay buffer for experience replay
         self.memory = ReplayBuffer(buffer_size=buffer_size, batch_size=batch_size)
 
     def update_target_network(self):
+        """Update target network to have the same weights as the Q-network."""
         self.target_network.load_state_dict(self.q_network.state_dict())
 
     def choose_action(self, state, epsilon=0.1):
+        """Epsilon-greedy action selection."""
         if random.random() < epsilon:
             return random.choice(self.env.available_actions())
         else:
@@ -68,7 +70,7 @@ class DQNAgent:
                 q_values = self.q_network(state)
             return torch.argmax(q_values).item()
 
-    def train(self, num_episodes, epsilon_start=1.0, epsilon_end=0.01, epsilon_decay=0.999, target_update_freq=10):
+    def train(self, num_episodes=1000, epsilon_start=1.0, epsilon_end=0.01, epsilon_decay=0.995, target_update_freq=10):
         scores = []
         epsilon = epsilon_start
 
@@ -82,7 +84,6 @@ class DQNAgent:
                 action = self.choose_action(state, epsilon)
                 next_state, reward, done, _ = self.env.step(action)
                 next_state = self.env.state_vector()
-                #print(len(state))
 
                 # Store experience in replay buffer
                 self.memory.add((state, action, reward, next_state, done))
@@ -108,19 +109,25 @@ class DQNAgent:
         return scores
 
     def learn(self, experiences):
+        """Update the Q-network with Double DQN targets."""
         states, actions, rewards, next_states, dones = zip(*experiences)
         states = torch.FloatTensor(states)
         actions = torch.LongTensor(actions).unsqueeze(1)
         rewards = torch.FloatTensor(rewards)
-        #print(rewards)
         next_states = torch.FloatTensor(next_states)
         dones = torch.FloatTensor(dones)
 
         # Compute current Q-values
         q_values = self.q_network(states).gather(1, actions).squeeze()
 
-        # Compute target Q-values
-        next_q_values = self.target_network(next_states).max(1)[0]
+        # Compute target Q-values using Double DQN
+        # Use Q-network to select the best action at the next state
+        next_action_indices = self.q_network(next_states).argmax(1).unsqueeze(1)
+
+        # Use the target network to compute Q-values for these selected actions
+        next_q_values = self.target_network(next_states).gather(1, next_action_indices).squeeze()
+
+        # Calculate the target Q-value
         targets = rewards + (1 - dones) * self.gamma * next_q_values
 
         # Loss and backpropagation

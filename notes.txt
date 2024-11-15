@@ -1,0 +1,2 @@
+tab q learning sencé être bon au line world grid world mais nul = pb algo ?
+fix tab q learning avant de faire le 100 000 ?
