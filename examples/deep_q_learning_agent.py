@@ -1,6 +1,6 @@
 import os
 import sys
-
+import time
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
@@ -17,7 +17,7 @@ def moving_average(data, window_size):
     return np.convolve(data, np.ones(window_size) / window_size, mode="valid")
 
 
-def run_dqn_example(env_class, env_name, num_episodes=1000):
+def run_dqn_example(env_class, env_name, num_episodes=10001):
     env = env_class()
     state_size = len(env.state_vector())
     action_size = env.num_actions()
@@ -40,65 +40,103 @@ def run_dqn_example(env_class, env_name, num_episodes=1000):
     )
 
     scores = []
+    steps_per_episode = []
+    action_times = []
     epsilon = epsilon_start
+
     for episode in range(1, num_episodes + 1):
         state = env.reset()
         state = env.state_vector()
         total_reward = 0
         done = False
+        episode_steps = 0
+        episode_action_times = []
 
         while not done:
             state_tensor = torch.FloatTensor(state).unsqueeze(0)
+
+            # Measure action execution time
+            action_start = time.time()
             action = agent.choose_action(state_tensor, epsilon)
+            action_time = time.time() - action_start
+            episode_action_times.append(action_time)
+
             next_state, reward, done, _ = env.step(action)
             next_state = env.state_vector()
             agent.memory.add((state, action, reward, next_state, done))
             state = next_state
             total_reward += reward
+            episode_steps += 1
 
             if len(agent.memory) > batch_size:
                 agent.learn(agent.memory.sample())
 
         scores.append(total_reward)
+        steps_per_episode.append(episode_steps)
+        action_times.append(np.mean(episode_action_times))
         epsilon = max(epsilon_end, epsilon * epsilon_decay)
 
         if episode % 10 == 0:
             avg_score = np.mean(scores[-100:])
+            avg_steps = np.mean(steps_per_episode[-100:])
+            avg_action_time = np.mean(action_times[-100:])
             print(
-                f"Episode {episode}/{num_episodes}, Avg Score: {avg_score:.5f}, Epsilon: {epsilon:.2f}"
+                f"Episode {episode}/{num_episodes}, "
+                f"Avg Score: {avg_score:.5f}, "
+                f"Avg Steps: {avg_steps:.2f}, "
+                f"Avg Action Time: {avg_action_time:.5f}s, "
+                f"Epsilon: {epsilon:.2f}"
             )
 
         if episode % 100 == 0:
             agent.update_target_network()
 
-    moving_avg = moving_average(scores, window_size=100)
-
+    # Plot scores
     plt.figure(figsize=(15, 7))
-    plt.plot(scores, color="gray", alpha=0.2, label="Raw Scores")
-    plt.plot(range(len(moving_avg)), moving_avg, color="red", label="Average Scores")
+    plt.subplot(3, 1, 1)
+    plot_metrics(scores, "Scores", env_name)
+
+    # Plot steps per episode
+    plt.subplot(3, 1, 2)
+    plot_metrics(steps_per_episode, "Steps per Episode", env_name)
+
+    # Plot action execution times
+    plt.subplot(3, 1, 3)
+    plot_metrics(action_times, "Average Action Time (seconds)", env_name)
+
+    plt.tight_layout()
+    plt.savefig(
+        f"src/metrics/plot/dqn/dqn_{env_name.lower().replace(' ', '_')}_metrics.png"
+    )
+    plt.close()
+
+    return scores, steps_per_episode, action_times
+
+
+def plot_metrics(data, metric_name, env_name):
+    moving_avg = moving_average(data, window_size=100)
+    plt.plot(data, color="gray", alpha=0.2, label=f"Raw {metric_name}")
+    plt.plot(
+        range(len(moving_avg)), moving_avg, color="red", label=f"Average {metric_name}"
+    )
 
     milestones = [1000, 10000, 100000, 1000000]
     for milestone in milestones:
-        if milestone <= len(scores):
-            avg_score = sum(scores[milestone - 100 : milestone]) / 100
+        if milestone <= len(data):
+            avg_value = sum(data[milestone - 100 : milestone]) / 100
             plt.axvline(x=milestone, color="green", linestyle="--", alpha=0.7)
             plt.text(
                 milestone,
                 plt.ylim()[1],
-                f"{milestone}\n{avg_score:.2f}",
+                f"{milestone}\n{avg_value:.2f}",
                 horizontalalignment="center",
                 verticalalignment="top",
             )
 
-    plt.title(f"DQN Learning Curve - {env_name}")
+    plt.title(f"{metric_name} - {env_name}")
     plt.xlabel("Episode")
-    plt.ylabel("Score")
+    plt.ylabel(metric_name)
     plt.legend()
-
-    plt.savefig(f"src/metrics/plot/dqn/dqn_{env_name.lower().replace(' ', '_')}_learning_curve.png")
-    plt.close()
-
-    return scores
 
 
 def print_scores_at_milestones(scores, env_name):
@@ -117,7 +155,7 @@ def main():
         (TicTacToe, "Tic Tac Toe"),
         # (Farkle, "Farkle"),
     ]:
-        scores = run_dqn_example(env_class, env_name)
+        scores, steps_per_episode, action_times = run_dqn_example(env_class, env_name)
         print_scores_at_milestones(scores, env_name)
 
 
