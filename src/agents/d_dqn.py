@@ -3,8 +3,11 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import random
+import time
 from typing import Any
+from matplotlib import pyplot as plt
 from src.environments import Environment
+
 
 # Q-Network for estimating Q-values
 class QNetwork(nn.Module):
@@ -19,9 +22,18 @@ class QNetwork(nn.Module):
         x = torch.relu(self.fc2(x))
         return self.fc3(x)
 
+
 # Double DQN Agent
 class DoubleDQNAgent:
-    def __init__(self, env: Environment, state_size: int, action_size: int, gamma=0.99, lr=0.001, target_update_freq=10):
+    def __init__(
+        self,
+        env: Environment,
+        state_size: int,
+        action_size: int,
+        gamma=0.99,
+        lr=0.001,
+        target_update_freq=10,
+    ):
         self.env = env
         self.state_size = state_size
         self.action_size = action_size
@@ -49,8 +61,16 @@ class DoubleDQNAgent:
                 q_values = self.q_network(state)
             return torch.argmax(q_values).item()
 
-    def train(self, num_episodes=1000, epsilon_start=1.0, epsilon_end=0.01, epsilon_decay=0.995):
+    def train(
+        self,
+        num_episodes=1000,
+        epsilon_start=1.0,
+        epsilon_end=0.01,
+        epsilon_decay=0.995,
+    ):
         scores = []
+        steps_per_episode = []
+        action_times = []
         epsilon = epsilon_start
 
         for episode in range(num_episodes):
@@ -58,30 +78,49 @@ class DoubleDQNAgent:
             state = self.env.state_vector()
             done = False
             score = 0
+            episode_steps = 0
+            episode_action_times = []
 
             while not done:
+                # Measure action execution time
+                action_start = time.time()
                 action = self.choose_action(state, epsilon)
+                action_time = time.time() - action_start
+                episode_action_times.append(action_time)
+
                 next_state, reward, done, _ = self.env.step(action)
                 next_state = self.env.state_vector()
 
                 # Learn directly from the experience
                 self.learn(state, action, reward, next_state, done)
-                
+
                 state = next_state
                 score += reward
+                episode_steps += 1
 
             # Decrease epsilon after each episode
             epsilon = max(epsilon_end, epsilon * epsilon_decay)
             scores.append(score)
+            steps_per_episode.append(episode_steps)
+            action_times.append(np.mean(episode_action_times))
 
             # Update the target network periodically
             if episode % self.target_update_freq == 0:
                 self.update_target_network()
 
             if (episode + 1) % 100 == 0:
-                print(f"Episode {episode + 1}/{num_episodes}, Avg Score: {np.mean(scores[-100:]):.2f}")
+                avg_score = np.mean(scores[-100:])
+                avg_steps = np.mean(steps_per_episode[-100:])
+                avg_action_time = np.mean(action_times[-100:])
+                print(
+                    f"Episode {episode + 1}/{num_episodes}, "
+                    f"Avg Score: {avg_score:.2f}, "
+                    f"Avg Steps: {avg_steps:.2f}, "
+                    f"Avg Action Time: {avg_action_time:.5f}s, "
+                    f"Epsilon: {epsilon:.2f}"
+                )
 
-        return scores
+        return scores, steps_per_episode, action_times
 
     def learn(self, state, action, reward, next_state, done):
         state = torch.FloatTensor(state).unsqueeze(0)
@@ -96,7 +135,11 @@ class DoubleDQNAgent:
         # Double DQN target calculation
         with torch.no_grad():
             best_action = self.q_network(next_state).argmax(1)
-            next_q_value = self.target_network(next_state).gather(1, best_action.unsqueeze(1)).squeeze()
+            next_q_value = (
+                self.target_network(next_state)
+                .gather(1, best_action.unsqueeze(1))
+                .squeeze()
+            )
             target = reward + (1 - done) * self.gamma * next_q_value
 
         # Compute loss and optimize
@@ -104,3 +147,21 @@ class DoubleDQNAgent:
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+
+def moving_average(data, window_size):
+    return np.convolve(data, np.ones(window_size) / window_size, mode="valid")
+
+
+def plot_metrics(data, metric_name, window_size=100):
+    plt.plot(data, alpha=0.6, label="Raw")
+    if len(data) >= window_size:
+        ma = moving_average(data, window_size)
+        plt.plot(
+            range(window_size - 1, len(data)), ma, label=f"{window_size}-episode MA"
+        )
+    plt.title(f"{metric_name} over Episodes")
+    plt.xlabel("Episode")
+    plt.ylabel(metric_name)
+    plt.legend()
+    plt.grid(True)
