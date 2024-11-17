@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import time
 from src.environments import Environment
 
 class TabularQLearningAgent:
@@ -26,15 +27,23 @@ class TabularQLearningAgent:
     def train(self, num_episodes=1000):
         """Train the agent over multiple episodes."""
         scores = []
+        steps_per_episode = []
+        action_times = []
         
         for episode in range(num_episodes):
             state = self.env.reset()
             done = False
             score = 0
+            steps = 0
+            episode_action_times = []
 
             while not done:
+                start_time = time.time()
                 action = self.choose_action(state)
+                episode_action_times.append(time.time() - start_time)
+                
                 next_state, reward, done, _ = self.env.step(action)
+                steps += 1
 
                 # Q-learning update rule
                 best_next_action = np.argmax(self.q_table[next_state])
@@ -48,11 +57,16 @@ class TabularQLearningAgent:
             # Decay epsilon after each episode
             self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
             scores.append(score)
+            steps_per_episode.append(steps)
+            action_times.append(np.mean(episode_action_times))
 
             if (episode + 1) % 100 == 0:
-                print(f"Episode {episode + 1}/{num_episodes}, Avg Score: {np.mean(scores[-100:]):.2f}")
+                print(f"Episode {episode + 1}/{num_episodes}, " 
+                      f"Avg Score: {np.mean(scores[-100:]):.2f}, "
+                      f"Steps: {steps}, "
+                      f"Avg Action Time: {np.mean(episode_action_times):.4f}s")
 
-        return scores
+        return scores, steps_per_episode, action_times
 
     def test(self, num_episodes=100):
         """Test the agent without exploration."""
