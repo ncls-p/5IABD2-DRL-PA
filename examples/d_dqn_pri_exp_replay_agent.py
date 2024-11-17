@@ -42,7 +42,7 @@ def plot_metrics(data, metric_name, env_name):
     plt.grid(True)
 
 
-def run_ddqn_pri_exp_replay_example(env_class, env_name, num_episodes=10000):
+def run_ddqn_pri_exp_replay_example(env_class, env_name, num_episodes=100000):
     env = env_class()
     state_size = len(env.state_vector())
     action_size = env.num_actions()
@@ -74,7 +74,7 @@ def run_ddqn_pri_exp_replay_example(env_class, env_name, num_episodes=10000):
 
 
 def print_scores_at_milestones(scores, env_name):
-    milestones = [100, 500, 1000, 5000, 10000, 100000, 1000000]
+    milestones = [1000, 10000, 100000, 1000000]
     print(f"\n{env_name} Scores at Milestones:")
     for milestone in milestones:
         if milestone <= len(scores):

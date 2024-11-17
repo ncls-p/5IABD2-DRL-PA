@@ -25,21 +25,21 @@ def plot_metrics(data, title, env_name, window_size=100):
     )
 
     # Add milestone markers
-    milestones = [100, 500, 1000, 5000, 10000]
+    milestones = [1000, 10000, 100000, 1000000]
     for milestone in milestones:
         if milestone <= len(data):
-            avg_value = np.mean(data[max(0, milestone - 100):milestone])
-            plt.axvline(x=milestone, color='green', linestyle='--', alpha=0.3)
-            plt.plot(milestone, avg_value, 'go', alpha=0.6)
+            avg_value = np.mean(data[max(0, milestone - 100) : milestone])
+            plt.axvline(x=milestone, color="green", linestyle="--", alpha=0.3)
+            plt.plot(milestone, avg_value, "go", alpha=0.6)
             plt.annotate(
-                f'Milestone {milestone}\nAvg: {avg_value:.2f}',
+                f"Milestone {milestone}\nAvg: {avg_value:.2f}",
                 xy=(milestone, avg_value),
                 xytext=(10, 10),
-                textcoords='offset points',
-                ha='left',
-                va='bottom',
-                bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.3),
-                arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0')
+                textcoords="offset points",
+                ha="left",
+                va="bottom",
+                bbox=dict(boxstyle="round,pad=0.5", fc="yellow", alpha=0.3),
+                arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0"),
             )
 
     plt.title(f"{title} - {env_name}")
@@ -82,7 +82,7 @@ def run_mcts_example(env_class, env_name, num_simulations=100, num_episodes=1000
 
 
 def print_scores_at_milestones(scores, env_name):
-    milestones = [100, 500, 1000, 5000, 10000]
+    milestones = [1000, 10000, 100000, 1000000]
     print(f"\n{env_name} Scores at Milestones:")
     for milestone in milestones:
         if milestone <= len(scores):
@@ -103,7 +103,7 @@ def main():
     ]:
         print(f"\nRunning MCTS on {env_name}...")
         scores, steps, times = run_mcts_example(
-            env_class, env_name, num_simulations=100, num_episodes=10000
+            env_class, env_name, num_simulations=100, num_episodes=100000
         )
 
 

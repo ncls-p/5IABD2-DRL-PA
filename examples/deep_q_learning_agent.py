@@ -17,7 +17,7 @@ def moving_average(data, window_size):
     return np.convolve(data, np.ones(window_size) / window_size, mode="valid")
 
 
-def run_dqn_example(env_class, env_name, num_episodes=10001):
+def run_dqn_example(env_class, env_name, num_episodes=100000):
     env = env_class()
     state_size = len(env.state_vector())
     action_size = env.num_actions()
@@ -140,7 +140,7 @@ def plot_metrics(data, metric_name, env_name):
 
 
 def print_scores_at_milestones(scores, env_name):
-    milestones = [100, 500, 1000, 5000, 10000, 100000, 1000000]
+    milestones = [1000, 10000, 100000, 1000000]
     print(f"\n{env_name} Scores at Milestones:")
     for milestone in milestones:
         if milestone <= len(scores):
