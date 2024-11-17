@@ -6,6 +6,7 @@ import numpy as np
 from copy import deepcopy
 from ..environments.farkle import Farkle
 from src.environments import Environment
+import time
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -147,12 +148,22 @@ class MCTSAgent:
 
     def train(self, num_episodes: int = 1000) -> List[float]:
         scores = []
+        steps_per_episode = []
+        action_times = []
+        
         for episode in range(num_episodes):
             state = self.env.reset()
             done = False
+            steps = 0
+            episode_action_times = []
+            
             while not done:
+                start_time = time.time()
                 action = self.choose_action(state)
+                episode_action_times.append(time.time() - start_time)
+                
                 state, reward, done, info = self.env.step(action)
+                steps += 1
                 if isinstance(self.env, Farkle):
                     self.player = info["current_player"]
 
@@ -161,10 +172,15 @@ class MCTSAgent:
                 scores.append(episode_score[self.player - 1])
             else:
                 scores.append(episode_score)
+            
+            steps_per_episode.append(steps)
+            action_times.append(np.mean(episode_action_times))
 
             logger.info(
                 f"Episode {episode + 1}/{num_episodes}, "
-                f"Avg Score: {np.mean(scores[-100:]):.2f}"
+                f"Avg Score: {np.mean(scores[-100:]):.2f}, "
+                f"Steps: {steps}, "
+                f"Avg Action Time: {np.mean(episode_action_times):.4f}s"
             )
 
-        return scores
+        return scores, steps_per_episode, action_times

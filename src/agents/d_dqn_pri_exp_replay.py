@@ -6,6 +6,7 @@ import random
 from collections import deque
 from typing import Any, List, Tuple
 from src.environments import Environment
+import time
 
 # Q-Network for estimating Q-values
 class QNetwork(nn.Module):
@@ -104,6 +105,8 @@ class DoubleDQNAgent:
 
     def train(self, num_episodes=1000, epsilon_start=1.0, epsilon_end=0.01, epsilon_decay=0.995, target_update_freq=10):
         scores = []
+        steps_per_episode = []
+        action_times = []
         epsilon = epsilon_start
 
         for episode in range(num_episodes):
@@ -111,11 +114,15 @@ class DoubleDQNAgent:
             state = self.env.state_vector()
             done = False
             score = 0
+            steps = 0
+            episode_action_times = []
 
             while not done:
+                start_time = time.time()
                 action = self.choose_action(state, epsilon)
                 next_state, reward, done, _ = self.env.step(action)
                 next_state = self.env.state_vector()
+                steps += 1
 
                 # TD-error as initial priority
                 with torch.no_grad():
@@ -131,10 +138,14 @@ class DoubleDQNAgent:
                 if len(self.memory) >= self.batch_size:
                     experiences, indices, weights = self.memory.sample(self.beta)
                     self.learn(experiences, indices, weights)
+                
+                episode_action_times.append(time.time() - start_time)
 
             # Decrease epsilon after each episode
             epsilon = max(epsilon_end, epsilon * epsilon_decay)
             scores.append(score)
+            steps_per_episode.append(steps)
+            action_times.append(np.mean(episode_action_times))
 
             # Update the target network periodically
             if episode % target_update_freq == 0:
@@ -143,7 +154,7 @@ class DoubleDQNAgent:
             if (episode + 1) % 100 == 0:
                 print(f"Episode {episode + 1}/{num_episodes}, Avg Score: {np.mean(scores[-100:]):.2f}")
 
-        return scores
+        return scores, steps_per_episode, action_times
 
     def learn(self, experiences, indices, weights):
         states, actions, rewards, next_states, dones = zip(*experiences)
