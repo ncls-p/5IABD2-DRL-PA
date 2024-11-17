@@ -1,11 +1,13 @@
+import random
+from collections import deque
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import random
-from collections import deque
-from typing import Any, List
+
 from src.environments import Environment
+
 
 # Q-Network for estimating Q-values
 class QNetwork(nn.Module):
@@ -19,6 +21,7 @@ class QNetwork(nn.Module):
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
         return self.fc3(x)
+
 
 # Replay Buffer to store past experiences
 class ReplayBuffer:
@@ -35,8 +38,18 @@ class ReplayBuffer:
     def __len__(self):
         return len(self.memory)
 
+
 class DoubleDQNAgent:
-    def __init__(self, env: Environment, state_size: int, action_size: int, batch_size=64, gamma=0.99, lr=0.001, buffer_size=10000):
+    def __init__(
+        self,
+        env: Environment,
+        state_size: int,
+        action_size: int,
+        batch_size=64,
+        gamma=0.99,
+        lr=0.001,
+        buffer_size=10000,
+    ):
         self.env = env
         self.state_size = state_size
         self.action_size = action_size
@@ -70,8 +83,17 @@ class DoubleDQNAgent:
                 q_values = self.q_network(state)
             return torch.argmax(q_values).item()
 
-    def train(self, num_episodes=1000, epsilon_start=1.0, epsilon_end=0.01, epsilon_decay=0.995, target_update_freq=10):
+    def train(
+        self,
+        num_episodes=1000,
+        epsilon_start=1.0,
+        epsilon_end=0.01,
+        epsilon_decay=0.995,
+        target_update_freq=10,
+    ):
         scores = []
+        epsilons = []
+        steps_per_episode = []
         epsilon = epsilon_start
 
         for episode in range(num_episodes):
@@ -79,11 +101,13 @@ class DoubleDQNAgent:
             state = self.env.state_vector()  # Obtain vectorized state representation
             done = False
             score = 0
+            steps = 0
 
             while not done:
                 action = self.choose_action(state, epsilon)
                 next_state, reward, done, _ = self.env.step(action)
                 next_state = self.env.state_vector()
+                steps += 1
 
                 # Store experience in replay buffer
                 self.memory.add((state, action, reward, next_state, done))
@@ -98,15 +122,19 @@ class DoubleDQNAgent:
             # Decrease epsilon after each episode
             epsilon = max(epsilon_end, epsilon * epsilon_decay)
             scores.append(score)
+            epsilons.append(epsilon)
+            steps_per_episode.append(steps)
 
             # Update the target network periodically
             if episode % target_update_freq == 0:
                 self.update_target_network()
 
             if (episode + 1) % 100 == 0:
-                print(f"Episode {episode + 1}/{num_episodes}, Avg Score: {np.mean(scores[-100:]):.2f}")
+                print(
+                    f"Episode {episode + 1}/{num_episodes}, Avg Score: {np.mean(scores[-100:]):.2f}"
+                )
 
-        return scores
+        return scores, steps_per_episode, epsilons
 
     def learn(self, experiences):
         """Update the Q-network with Double DQN targets."""
@@ -125,7 +153,9 @@ class DoubleDQNAgent:
         next_action_indices = self.q_network(next_states).argmax(1).unsqueeze(1)
 
         # Use the target network to compute Q-values for these selected actions
-        next_q_values = self.target_network(next_states).gather(1, next_action_indices).squeeze()
+        next_q_values = (
+            self.target_network(next_states).gather(1, next_action_indices).squeeze()
+        )
 
         # Calculate the target Q-value
         targets = rewards + (1 - dones) * self.gamma * next_q_values
