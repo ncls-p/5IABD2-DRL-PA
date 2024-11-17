@@ -48,10 +48,13 @@ def plot_metrics(data, title, env_name, window_size=100):
     plt.legend()
 
 
-def run_mcts_example(env_class, env_name, num_simulations=100, num_episodes=1000):
+def run_mcts_example(env_class, env_name, num_simulations=1000, num_episodes=100000):
     print(f"\nRunning MCTS on {env_name}")
     env = env_class()
-    agent = MCTSAgent(env, num_simulations=num_simulations)
+    agent = MCTSAgent(env, 
+                     num_simulations=num_simulations,
+                     exploration_weight=1.414,  # Standard UCT exploration weight
+                     simulation_temp=0.5)  # Moderate exploration in rollouts
     scores, steps_per_episode, action_times = agent.train(num_episodes=num_episodes)
 
     # Create a figure with three subplots
@@ -103,7 +106,7 @@ def main():
     ]:
         print(f"\nRunning MCTS on {env_name}...")
         scores, steps, times = run_mcts_example(
-            env_class, env_name, num_simulations=100, num_episodes=100000
+            env_class, env_name, num_simulations=1000, num_episodes=100000
         )
 
 
