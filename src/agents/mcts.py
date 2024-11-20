@@ -4,7 +4,6 @@ import random
 from typing import Any, List, Optional
 import numpy as np
 from copy import deepcopy
-from ..environments.farkle import Farkle
 from src.environments import Environment
 import time
 
@@ -92,6 +91,10 @@ class MCTSAgent:
         self._recent_window = 100  # Window for tracking recent performance
         self._last_action = None
         self._consecutive_failures = 0
+        self.initial_epsilon = 1.0
+        self.epsilon_decay = 0.995
+        self.min_epsilon = 0.01
+        self.current_epsilon = self.initial_epsilon
 
     def copy_environment(self, env: Environment) -> Environment:
         return deepcopy(env)
@@ -365,9 +368,12 @@ class MCTSAgent:
         self._last_action = chosen_action
         return chosen_action
 
-    def train(self, num_episodes: int = 1000) -> List[float]:
+    def train(
+        self, num_episodes: int = 1000
+    ) -> tuple[list[float], list[int], list[float], list[float]]:
         scores = []
         steps_per_episode = []
+        epsilon_values = []
         action_times = []
         
         for episode in range(num_episodes):
@@ -377,36 +383,45 @@ class MCTSAgent:
             steps = 0
             episode_action_times = []
             cumulative_reward = 0
-            
+
+            # Decay epsilon
+            self.current_epsilon = max(
+                self.min_epsilon, self.initial_epsilon * (self.epsilon_decay**episode)
+            )
+
             while not done and steps < self.max_depth:
                 start_time = time.time()
                 action = self.choose_action(state)
                 action_time = time.time() - start_time
                 episode_action_times.append(action_time)
-                
+
                 state, reward, done, _ = self.env.step(action)
                 cumulative_reward += reward
                 steps += 1
-            
+
             # Update consecutive failures
             if cumulative_reward < 0:
                 self._consecutive_failures += 1
             else:
                 self._consecutive_failures = 0
-            
+
+            # Update metrics
             scores.append(cumulative_reward)
             steps_per_episode.append(steps)
+            epsilon_values.append(self.current_epsilon)
             action_times.append(np.mean(episode_action_times))
             
             # Log progress
             if (episode + 1) % 1 == 0:
                 avg_score = np.mean(scores[-100:] if len(scores) > 100 else scores)
                 avg_action_time = np.mean(action_times[-100:] if len(action_times) > 100 else action_times)
+                avg_epsilon = np.mean(epsilon_values[-100:])
                 logging.info(
                     f"Episode {episode + 1}/{num_episodes}, "
                     f"Avg Score: {avg_score:.2f}, "
                     f"Steps: {steps}, "
-                    f"Avg Action Time: {avg_action_time:.4f}s"
+                    f"Avg Action Time: {avg_action_time:.4f}s, "
+                    f"Epsilon: {avg_epsilon:.4f}"
                 )
-        
-        return scores, steps_per_episode, action_times
+
+        return scores, steps_per_episode, epsilon_values, action_times
