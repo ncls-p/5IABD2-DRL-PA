@@ -1,7 +1,8 @@
 import os
 import sys
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -48,13 +49,22 @@ def plot_metrics(data, title, env_name, window_size=100):
     plt.legend()
 
 
-def run_mcts_example(env_class, env_name, num_simulations=500, num_episodes=100000):
-    print(f"\nRunning MCTS on {env_name}")
+def run_mcts_example(
+    env_class,
+    env_name,
+    num_simulations=100,
+    num_episodes=100000,
+    exploration_weight=1.414,
+    simulation_temp=0.5,
+):
     env = env_class()
-    agent = MCTSAgent(env, 
-                     num_simulations=num_simulations,
-                     exploration_weight=1.414,  # Standard UCT exploration weight
-                     simulation_temp=0.5)  # Moderate exploration in rollouts
+    agent = MCTSAgent(
+        env,
+        num_simulations=num_simulations,
+        exploration_weight=exploration_weight,
+        simulation_temp=simulation_temp,
+        max_depth=50,
+    )
 
     scores, steps_per_episode, epsilon_values, action_times = agent.train(
         num_episodes=num_episodes
@@ -99,15 +109,39 @@ def print_scores_at_milestones(scores, env_name):
 def main():
     os.makedirs("src/metrics/plot/mcts", exist_ok=True)
 
-    for env_class, env_name in [
-        (LineWorld, "Line World"),
-        (GridWorld, "Grid World"),
-        (TicTacToe, "Tic Tac Toe"),
-        (Farkle, "Farkle"),
-    ]:
+    # Environment-specific configurations
+    env_configs = {
+        # (LineWorld, "Line World"): {
+        #     "num_simulations": 100,
+        #     "num_episodes": 100000,
+        #     "exploration_weight": 1.414,
+        # },
+        (GridWorld, "Grid World"): {
+            "num_simulations": 1000,
+            "num_episodes": 100000,
+            "exploration_weight": 4,
+        },
+        (TicTacToe, "Tic Tac Toe"): {
+            "num_simulations": 2000,
+            "num_episodes": 100000,
+            "exploration_weight": 6,
+        },
+        (Farkle, "Farkle"): {
+            "num_simulations": 3000,
+            "num_episodes": 100000,
+            "exploration_weight": 8,
+        },
+    }
+
+    for (env_class, env_name), config in env_configs.items():
         print(f"\nRunning MCTS on {env_name}...")
         scores, steps, times = run_mcts_example(
-            env_class, env_name, num_simulations=1000, num_episodes=100000
+            env_class,
+            env_name,
+            num_simulations=config["num_simulations"],
+            num_episodes=config["num_episodes"],
+            exploration_weight=config.get("exploration_weight", 1.414),
+            simulation_temp=config.get("simulation_temp", 0.5),
         )
 
 
