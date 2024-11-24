@@ -3,7 +3,10 @@ import sys
 import numpy as np
 import torch
 import time
+from datetime import datetime
 from matplotlib import pyplot as plt
+from torch.utils.tensorboard import SummaryWriter
+
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -12,6 +15,12 @@ from src.environments.line_world import LineWorld
 from src.environments.grid_world import GridWorld
 from src.environments.tic_tac_toe import TicTacToe
 from src.environments.farkle import Farkle
+
+
+def create_tensorboard_writer(env_name: str) -> SummaryWriter:
+    current_time = datetime.now().strftime('%Y%m%d-%H%M%S')
+    log_dir = os.path.join('runs', 'reinforce', env_name, current_time)
+    return SummaryWriter(log_dir)
 
 
 def plot_metrics(data, title, env_name, window_size=100):
@@ -25,6 +34,23 @@ def plot_metrics(data, title, env_name, window_size=100):
         label=f"{window_size}-Episode Moving Average",
     )
 
+    milestones = [1000, 5000, 10000, 50000, 100000]
+    for milestone in milestones:
+        if milestone <= len(data):
+            avg_value = np.mean(data[max(0, milestone - 100) : milestone])
+            plt.axvline(x=milestone, color="green", linestyle="--", alpha=0.3)
+            plt.plot(milestone, avg_value, "go", alpha=0.6)
+            plt.annotate(
+                f"Milestone {milestone}\nAvg: {avg_value:.2f}",
+                xy=(milestone, avg_value),
+                xytext=(10, 10),
+                textcoords="offset points",
+                ha="left",
+                va="bottom",
+                bbox=dict(boxstyle="round,pad=0.5", fc="yellow", alpha=0.3),
+                arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0"),
+            )
+
     plt.title(f"{title} - {env_name}")
     plt.xlabel("Episode")
     plt.ylabel(title)
@@ -34,7 +60,7 @@ def plot_metrics(data, title, env_name, window_size=100):
 def run_reinforce_example(
     env_class,
     env_name,
-    num_episodes=10000,
+    num_episodes=100000,
     learning_rate=0.001,
     gamma=0.99,
     hidden_size=64
@@ -42,7 +68,13 @@ def run_reinforce_example(
     env = env_class()
     state_size = len(env.state_vector())
     action_size = env.num_actions()
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    if torch.cuda.is_available():
+        device = "cuda"
+    # elif torch.backend.mps.is_available():
+    #     device = "mps"
+    else:
+        device = "cpu"
 
     agent = REINFORCEAgent(
         env=env,
@@ -56,6 +88,17 @@ def run_reinforce_example(
     scores = []
     steps_per_episode = []
     action_times = []
+
+    writer = create_tensorboard_writer(env_name)
+    writer.add_hparams(
+        {
+            'learning_rate': learning_rate,
+            'gamma': gamma,
+            'hidden_size': hidden_size,
+            'num_episodes': num_episodes,
+        },
+        {'dummy': 0}  # Required placeholder metric
+    )
 
     for episode in range(num_episodes):
         state = env.reset()
@@ -94,6 +137,14 @@ def run_reinforce_example(
         steps_per_episode.append(episode_steps)
         action_times.append(np.mean(episode_action_times))
 
+        # Log metrics to tensorboard
+        writer.add_scalar('Metrics/Episode_Reward', episode_reward, episode)
+        writer.add_scalar('Metrics/Steps_per_Episode', episode_steps, episode)
+        writer.add_scalar('Metrics/Average_Action_Time', np.mean(episode_action_times), episode)
+
+        if len(scores) >= 100:
+            writer.add_scalar('Metrics/Average_100_Episodes_Reward', np.mean(scores[-100:]), episode)
+
         if (episode + 1) % 100 == 0:
             avg_score = np.mean(scores[-100:])
             avg_steps = np.mean(steps_per_episode[-100:])
@@ -106,13 +157,17 @@ def run_reinforce_example(
             )
 
         if episode > 0 and episode % 5000 == 0:
+            checkpoint_path = f'reinforce_checkpoint_{env_name}_{episode}.pt'
             torch.save({
                 'episode': episode,
                 'model_state_dict': agent.policy.state_dict(),
                 'optimizer_state_dict': agent.optimizer.state_dict(),
                 'scores': scores,
-            }, f'reinforce_checkpoint_{env_name}_{episode}.pt')
+            }, checkpoint_path)
+            # Log model checkpoint path
+            writer.add_text('Checkpoints', f'Saved checkpoint: {checkpoint_path}', episode)
 
+    writer.close()
     return scores, steps_per_episode, action_times
 
 
@@ -136,8 +191,9 @@ def main():
         # },
         (GridWorld, "Grid World"): {
             "num_episodes": 10000,
-            "learning_rate": 0.00001,
-            "gamma": 0.99,
+            #"learning_rate": 0.00001,
+            "learning_rate": 0.0000096,
+            "gamma": 0.925,
         }
         # (TicTacToe, "Tic Tac Toe"): {
         #     "num_episodes": 10000,
