@@ -46,7 +46,7 @@ def plot_metrics(data, title, env_name, window_size=100):
     plt.legend()
 
 
-def run_tab_q_learn_example(env_class, env_name, num_episodes=10001):
+def run_tab_q_learn_example(env_class, env_name, num_episodes=100000):
     env = env_class()
     learning_rate = 0.0005 * 2
     gamma = 0.99
@@ -109,9 +109,9 @@ def main():
 
     # Run Q-learning on each environment
     for env_class, env_name in [
-        (LineWorld, "Line World"),
-        (GridWorld, "Grid World"),
-        (TicTacToe, "Tic Tac Toe"),
+        # (LineWorld, "Line World"),
+        # (GridWorld, "Grid World"),
+        # (TicTacToe, "Tic Tac Toe"),
         (Farkle, "Farkle"),
     ]:
         print(f"\nRunning Tabular Q-Learning on {env_name}...")
