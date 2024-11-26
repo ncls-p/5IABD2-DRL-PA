@@ -15,6 +15,9 @@ class GridWorld(Environment):
         self.wall = (1, 1)
         self.done = False
         self.score_value = 0
+    
+    def env_name(self):
+        return "grid_world"
 
     def render(self) -> None:
         """Render the current state of the environment."""

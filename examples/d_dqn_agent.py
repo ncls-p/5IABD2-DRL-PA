@@ -18,7 +18,7 @@ def moving_average(data, window_size):
     return np.convolve(data, np.ones(window_size) / window_size, mode="valid")
 
 
-def run_ddqn_example(env_class, env_name, num_episodes=100000):
+def run_ddqn_example(env_class, env_name, num_episodes=100001):
     env = env_class()
     state_size = len(env.state_vector())
     action_size = env.num_actions()

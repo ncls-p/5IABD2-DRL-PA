@@ -17,7 +17,7 @@ def moving_average(data, window_size):
     return np.convolve(data, np.ones(window_size) / window_size, mode="valid")
 
 
-def run_dqn_example(env_class, env_name, num_episodes=100000):
+def run_dqn_example(env_class, env_name, num_episodes=10001):
     env = env_class()
     state_size = len(env.state_vector())
     action_size = env.num_actions()
@@ -92,7 +92,7 @@ def run_dqn_example(env_class, env_name, num_episodes=100000):
             agent.update_target_network()
 
     # Plot scores
-    plt.figure(figsize=(15, 7))
+    '''plt.figure(figsize=(15, 7))
     plt.subplot(3, 1, 1)
     plot_metrics(scores, "Scores", env_name)
 
@@ -108,7 +108,7 @@ def run_dqn_example(env_class, env_name, num_episodes=100000):
     plt.savefig(
         f"src/metrics/plot/dqn/dqn_{env_name.lower().replace(' ', '_')}_metrics.png"
     )
-    plt.close()
+    plt.close()'''
 
     return scores, steps_per_episode, action_times
 
@@ -153,7 +153,7 @@ def main():
         (LineWorld, "Line World"),
         (GridWorld, "Grid World"),
         (TicTacToe, "Tic Tac Toe"),
-        # (Farkle, "Farkle"),
+        (Farkle, "Farkle"),
     ]:
         scores, steps_per_episode, action_times = run_dqn_example(env_class, env_name)
         print_scores_at_milestones(scores, env_name)
