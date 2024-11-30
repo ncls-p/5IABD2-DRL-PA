@@ -82,7 +82,8 @@ def run_reinforce_example(
         action_size=action_size,
         lr=learning_rate,
         gamma=gamma,
-        device=device
+        device=device,
+        env_name=env_name
     )
 
     scores = []
@@ -166,6 +167,30 @@ def run_reinforce_example(
             }, checkpoint_path)
             # Log model checkpoint path
             writer.add_text('Checkpoints', f'Saved checkpoint: {checkpoint_path}', episode)
+
+        if (episode + 1) % 10000 == 0:
+            # Create base model directory if it doesn't exist
+            base_dir = os.path.join(os.getcwd(), 'model', 'reinforce', env_name)
+            os.makedirs(base_dir, exist_ok=True)
+
+            # Save checkpoint
+            checkpoint_path = os.path.join(base_dir, f'checkpoint_{episode+1}.pt')
+
+            checkpoint = {
+                'episode': episode + 1,
+                'model_state_dict': agent.policy.state_dict(),
+                'optimizer_state_dict': agent.optimizer.state_dict(),
+                'rewards': rewards,
+                'timestamp': datetime.now().strftime('%Y%m%d-%H%M%S')
+            }
+
+            torch.save(checkpoint, checkpoint_path)
+            print(f"Saved checkpoint to {checkpoint_path}")
+
+    final_path = os.path.join(os.getcwd(), 'model', 'reinforce',
+                             env_name, 'final_model.pt')
+    os.makedirs(os.path.dirname(final_path), exist_ok=True)
+    torch.save(agent.policy.state_dict(), final_path)
 
     writer.close()
     return scores, steps_per_episode, action_times

@@ -4,6 +4,8 @@ import torch.optim as optim
 import numpy as np
 from torch.distributions import Categorical
 from src.environments import Environment
+from datetime import datetime
+import os
 
 class PolicyNetwork(nn.Module):
     def __init__(self, state_size: int, action_size: int, hidden_size: int = 64):
@@ -25,9 +27,11 @@ class REINFORCEAgent:
         action_size: int,
         lr: float = 0.001,
         gamma: float = 0.99,
-        device: str = "cpu"
+        device: str = "cpu",
+        env_name: str = "DefaultEnv"
     ):
         self.env = env
+        self.env_name = env_name
         self.gamma = gamma
         self.device = device
         self.policy = PolicyNetwork(state_size, action_size).to(device)
@@ -97,4 +101,36 @@ class REINFORCEAgent:
                 avg_reward = np.mean(episode_rewards[-100:])
                 print(f"Episode {episode + 1}, Average Reward: {avg_reward:.2f}")
 
+            # Save model checkpoint every 10000 episodes
+            if (episode + 1) % 10000 == 0:
+                checkpoint_path = os.path.join('model', 'reinforce',
+                                             self.env_name,
+                                             f'checkpoint_{episode+1}.pt')
+                os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
+
+                # Save checkpoint with more information
+                torch.save({
+                    'episode': episode + 1,
+                    'model_state_dict': self.policy.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict(),
+                    'rewards': episode_rewards,
+                    'timestamp': datetime.now().strftime('%Y%m%d-%H%M%S')
+                }, checkpoint_path)
+
+                print(f"Saved checkpoint at episode {episode + 1}")
+
+        # Save final model
+        final_path = os.path.join('model', 'reinforce',
+                                 self.env_name,
+                                 f'final_model.pt')
+        os.makedirs(os.path.dirname(final_path), exist_ok=True)
+        torch.save(self.policy.state_dict(), final_path)
+
         return episode_rewards
+
+    def save_model(self, env_name: str) -> None:
+        current_time = datetime.now().strftime('%Y%m%d-%H%M%S')
+        path = os.path.join('model', 'reinforce', env_name, current_time, 'policy.pt')
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
+        torch.save(self.policy.state_dict(), path)
