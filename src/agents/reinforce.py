@@ -9,15 +9,19 @@ import os
 
 class PolicyNetwork(nn.Module):
     def __init__(self, state_size: int, action_size: int, hidden_size: int = 64):
-        super(PolicyNetwork, self).__init__()
-        self.fc1 = nn.Linear(state_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, action_size)
+        super().__init__()
+        # Use a more efficient architecture
+        self.network = nn.Sequential(
+            nn.Linear(state_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, action_size),
+            nn.Softmax(dim=-1)
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        return torch.softmax(self.fc3(x), dim=-1)
+        return self.network(x)
 
 class REINFORCEAgent:
     def __init__(
@@ -38,21 +42,26 @@ class REINFORCEAgent:
         self.optimizer = optim.Adam(self.policy.parameters(), lr=lr)
 
     def train_episode(self, rewards: list, log_probs: list) -> None:
-        returns = []
-        G = 0
-        for r in reversed(rewards):
-            G = r + self.gamma * G
-            returns.insert(0, G)
-        returns = torch.FloatTensor(returns).to(self.device)
+        # Convert lists to tensors at once
+        rewards_tensor = torch.FloatTensor(rewards).to(self.device)
+        log_probs_tensor = torch.stack(log_probs)
 
-        if len(returns) > 1:
-            returns = (returns - returns.mean()) / (returns.std() + 1e-8)
+        # Vectorized returns calculation
+        returns = torch.zeros_like(rewards_tensor)
+        future_return = 0
+        for t in reversed(range(len(rewards))):
+            future_return = rewards[t] + self.gamma * future_return
+            returns[t] = future_return
 
-        policy_loss = torch.stack([-log_prob * G for log_prob, G in zip(log_probs, returns)])
-        policy_loss = policy_loss.sum()
+        # Normalize returns in one operation
+        returns = (returns - returns.mean()) / (returns.std() + 1e-8)
+
+        # Compute loss in one operation
+        policy_loss = -(log_probs_tensor * returns).sum()
 
         self.optimizer.zero_grad()
         policy_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.policy.parameters(), max_norm=1.0)
         self.optimizer.step()
 
     def choose_action(self, state: torch.Tensor) -> tuple[int, torch.Tensor]:
@@ -100,24 +109,6 @@ class REINFORCEAgent:
             if (episode + 1) % 100 == 0:
                 avg_reward = np.mean(episode_rewards[-100:])
                 print(f"Episode {episode + 1}, Average Reward: {avg_reward:.2f}")
-
-            # Save model checkpoint every 10000 episodes
-            if (episode + 1) % 10000 == 0:
-                checkpoint_path = os.path.join('model', 'reinforce',
-                                             self.env_name,
-                                             f'checkpoint_{episode+1}.pt')
-                os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
-
-                # Save checkpoint with more information
-                torch.save({
-                    'episode': episode + 1,
-                    'model_state_dict': self.policy.state_dict(),
-                    'optimizer_state_dict': self.optimizer.state_dict(),
-                    'rewards': episode_rewards,
-                    'timestamp': datetime.now().strftime('%Y%m%d-%H%M%S')
-                }, checkpoint_path)
-
-                print(f"Saved checkpoint at episode {episode + 1}")
 
         # Save final model
         final_path = os.path.join('model', 'reinforce',

@@ -157,17 +157,6 @@ def run_reinforce_example(
                 f"Avg Action Time: {avg_action_time:.5f}s"
             )
 
-        if episode > 0 and episode % 5000 == 0:
-            checkpoint_path = f'reinforce_checkpoint_{env_name}_{episode}.pt'
-            torch.save({
-                'episode': episode,
-                'model_state_dict': agent.policy.state_dict(),
-                'optimizer_state_dict': agent.optimizer.state_dict(),
-                'scores': scores,
-            }, checkpoint_path)
-            # Log model checkpoint path
-            writer.add_text('Checkpoints', f'Saved checkpoint: {checkpoint_path}', episode)
-
         if (episode + 1) % 10000 == 0:
             # Create base model directory if it doesn't exist
             base_dir = os.path.join(os.getcwd(), 'model', 'reinforce', env_name)
@@ -197,7 +186,7 @@ def run_reinforce_example(
 
 
 def print_scores_at_milestones(scores, env_name):
-    milestones = [1000, 5000, 10000]
+    milestones = [1000, 5000, 10000, 20000, 50000, 100000]
     print(f"\n{env_name} Scores at Milestones:")
     for milestone in milestones:
         if milestone <= len(scores):
@@ -210,26 +199,26 @@ def main():
 
     env_configs = {
         # (LineWorld, "Line World"): {
-        #     "num_episodes": 10000,
-        #     "learning_rate": 0.001,
+        #     "num_episodes": 100000,
+        #     "learning_rate": 0.0001,
         #     "gamma": 0.99,
         # },
-        (GridWorld, "Grid World"): {
-            "num_episodes": 10000,
-            #"learning_rate": 0.00001,
-            "learning_rate": 0.0000096,
-            "gamma": 0.925,
-        }
+        # (GridWorld, "Grid World"): {
+        #     "num_episodes": 100000,
+        #     "learning_rate": 0.00001,
+        #     "learning_rate": 0.000001,
+        #     "gamma": 0.9,
+        # }
         # (TicTacToe, "Tic Tac Toe"): {
-        #     "num_episodes": 10000,
+        #      "num_episodes": 100000,
         #     "learning_rate": 0.0005,
         #     "gamma": 0.95,
         # }
-        # (Farkle, "Farkle"): {
-        #     "num_episodes": 1000,
-        #     "learning_rate": 0.0005,
-        #     "gamma": 0.95,
-        # }
+        (Farkle, "Farkle"): {
+            "num_episodes": 1000,
+            "learning_rate": 0.001,
+            "gamma": 0.95,
+        }
     }
 
     for (env_class, env_name), config in env_configs.items():
