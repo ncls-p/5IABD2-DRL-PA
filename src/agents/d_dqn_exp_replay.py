@@ -1,12 +1,15 @@
 import random
 from collections import deque
-
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
 from src.environments import Environment
+import time
+
+
+# Check if CUDA is available
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # Q-Network for estimating Q-values
@@ -59,8 +62,8 @@ class DoubleDQNAgent:
         self.buffer_size = buffer_size
 
         # Neural networks for policy (Q-function) and target Q-function
-        self.q_network = QNetwork(state_size, action_size)
-        self.target_network = QNetwork(state_size, action_size)
+        self.q_network = QNetwork(state_size, action_size).to(device)
+        self.target_network = QNetwork(state_size, action_size).to(device)
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=lr)
 
         # Copy weights from the Q-network to the target network initially
@@ -78,7 +81,7 @@ class DoubleDQNAgent:
         if random.random() < epsilon:
             return random.choice(self.env.available_actions())
         else:
-            state = torch.FloatTensor(state).unsqueeze(0)
+            state = torch.FloatTensor(state).unsqueeze(0).to(device)
             with torch.no_grad():
                 q_values = self.q_network(state)
             return torch.argmax(q_values).item()
@@ -94,6 +97,7 @@ class DoubleDQNAgent:
         scores = []
         epsilons = []
         steps_per_episode = []
+        action_times = []
         epsilon = epsilon_start
 
         for episode in range(num_episodes):
@@ -102,8 +106,11 @@ class DoubleDQNAgent:
             done = False
             score = 0
             steps = 0
+            episode_action_times = []
+
 
             while not done:
+                start_time = time.time()
                 action = self.choose_action(state, epsilon)
                 next_state, reward, done, _ = self.env.step(action)
                 next_state = self.env.state_vector()
@@ -118,12 +125,16 @@ class DoubleDQNAgent:
                 if len(self.memory) >= self.batch_size:
                     experiences = self.memory.sample()
                     self.learn(experiences)
+                
+                episode_action_times.append(time.time() - start_time)
 
             # Decrease epsilon after each episode
             epsilon = max(epsilon_end, epsilon * epsilon_decay)
             scores.append(score)
             epsilons.append(epsilon)
             steps_per_episode.append(steps)
+            action_times.append(np.mean(episode_action_times))
+
 
             # Update the target network periodically
             if episode % target_update_freq == 0:
@@ -134,16 +145,18 @@ class DoubleDQNAgent:
                     f"Episode {episode + 1}/{num_episodes}, Avg Score: {np.mean(scores[-100:]):.2f}"
                 )
 
-        return scores, steps_per_episode, epsilons
+        return scores, steps_per_episode, action_times
 
     def learn(self, experiences):
         """Update the Q-network with Double DQN targets."""
         states, actions, rewards, next_states, dones = zip(*experiences)
-        states = torch.FloatTensor(states)
-        actions = torch.LongTensor(actions).unsqueeze(1)
-        rewards = torch.FloatTensor(rewards)
-        next_states = torch.FloatTensor(next_states)
-        dones = torch.FloatTensor(dones)
+
+        # Move data to GPU
+        states = torch.FloatTensor(states).to(device)
+        actions = torch.LongTensor(actions).unsqueeze(1).to(device)
+        rewards = torch.FloatTensor(rewards).to(device)
+        next_states = torch.FloatTensor(next_states).to(device)
+        dones = torch.FloatTensor(dones).to(device)
 
         # Compute current Q-values
         q_values = self.q_network(states).gather(1, actions).squeeze()

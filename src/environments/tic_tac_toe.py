@@ -14,6 +14,9 @@ class TicTacToe(Environment):
         self.winner: Optional[int] = (
             None  # 1 for player 1, 2 for player 2, None for no winner
         )
+    
+    def env_name(self):
+        return "tic_tac_toe"
 
     def render(self) -> None:
         """Render the current state of the environment."""

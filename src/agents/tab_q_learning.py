@@ -2,6 +2,7 @@ import numpy as np
 import random
 import time
 from src.environments import Environment
+import pickle
 
 class TabularQLearningAgent:
     def __init__(self, env: Environment, learning_rate=0.1, gamma=0.99, epsilon_start=1.0, epsilon_min=0.01, epsilon_decay=0.995):
@@ -65,6 +66,10 @@ class TabularQLearningAgent:
                       f"Avg Score: {np.mean(scores[-100:]):.2f}, "
                       f"Steps: {steps}, "
                       f"Avg Action Time: {np.mean(episode_action_times):.4f}s")
+        
+        filepath = f"model/tab_q_learn/q_table_{self.env.env_name()}.pkl"
+        with open(filepath, "wb") as f:
+            pickle.dump(self.q_table, f)
 
         return scores, steps_per_episode, action_times
 

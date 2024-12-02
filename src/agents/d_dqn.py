@@ -8,6 +8,9 @@ from typing import Any
 from matplotlib import pyplot as plt
 from src.environments import Environment
 
+# Check if CUDA is available
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 # Q-Network for estimating Q-values
 class QNetwork(nn.Module):
@@ -42,8 +45,8 @@ class DoubleDQNAgent:
         self.target_update_freq = target_update_freq
 
         # Policy and target networks
-        self.q_network = QNetwork(state_size, action_size)
-        self.target_network = QNetwork(state_size, action_size)
+        self.q_network = QNetwork(state_size, action_size).to(device)
+        self.target_network = QNetwork(state_size, action_size).to(device)
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=lr)
 
         # Initialize target network parameters to match the policy network
@@ -56,7 +59,7 @@ class DoubleDQNAgent:
         if random.random() < epsilon:
             return random.choice(self.env.available_actions())
         else:
-            state = torch.FloatTensor(state).unsqueeze(0)
+            state = torch.FloatTensor(state).unsqueeze(0).to(device)
             with torch.no_grad():
                 q_values = self.q_network(state)
             return torch.argmax(q_values).item()
@@ -123,11 +126,11 @@ class DoubleDQNAgent:
         return scores, steps_per_episode, action_times
 
     def learn(self, state, action, reward, next_state, done):
-        state = torch.FloatTensor(state).unsqueeze(0)
-        next_state = torch.FloatTensor(next_state).unsqueeze(0)
-        action = torch.LongTensor([action])
-        reward = torch.FloatTensor([reward])
-        done = torch.FloatTensor([done])
+        state = torch.FloatTensor(state).unsqueeze(0).to(device)
+        next_state = torch.FloatTensor(next_state).unsqueeze(0).to(device)
+        action = torch.LongTensor([action]).to(device)
+        reward = torch.FloatTensor([reward]).to(device)
+        done = torch.FloatTensor([done]).to(device)
 
         # Get current Q-value estimate
         q_value = self.q_network(state).gather(1, action.unsqueeze(1)).squeeze()

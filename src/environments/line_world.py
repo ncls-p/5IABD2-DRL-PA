@@ -13,6 +13,9 @@ class LineWorld(Environment):
         self.done = False
         self.score_value = 0
         self.target_position = size - 1
+    
+    def env_name(self):
+        return "line_world"
 
     def render(self) -> None:
         """Render the current state of the environment."""
