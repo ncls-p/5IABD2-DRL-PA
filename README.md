@@ -273,15 +273,28 @@ python examples/train_agent.py
 ```bash
 .
 ├── examples/
+│   ├── d_dqn_agent.py
+│   ├── d_dqn_exp_replay_agent.py
+│   ├── d_dqn_pri_exp_replay_agent.py
+│   ├── deep_q_learning_agent.py
+│   ├── mcts_agent.py
 │   ├── player_agent.py
 │   ├── random_agent.py
-│   ├── mcts_agent.py
-│   ├── deep_q_learning_agent.py
+│   ├── reinforce_agent.py
+│   ├── reinforce_baseline_learned_by_critic.py
+│   ├── reinforce_mean_baseline_agent.py
+│   ├── tab_q_learning_agent.py
 ├── src/
 │   ├── agents/
 │   │   ├── __init__.py
+│   │   ├── d_dqn.py
+│   │   ├── d_dqn_exp_replay.py
+│   │   ├── d_dqn_pri_exp_replay.py
 │   │   ├── deep_q_learning.py
 │   │   ├── mcts.py
+│   │   ├── reinforce.py
+│   │   ├── reinforce_mean_baseline.py
+│   │   ├── tab_q_learning.py
 │   ├── environments/
 │   │   ├── __init__.py
 │   │   ├── farkle.py
@@ -297,6 +310,7 @@ python examples/train_agent.py
 │   ├── test_farkle.py
 │   ├── test_grid_world.py
 │   ├── test_line_world.py
+│   ├── test_mcts.py
 │   ├── test_tic_tac_toe.py
 ├── README.md
 ├── requirements.txt
