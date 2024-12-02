@@ -124,7 +124,11 @@ class DQNAgent:
             'q_network_state_dict': self.q_network.state_dict(),
             'target_network_state_dict': self.target_network.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
+<<<<<<< HEAD
         }, f"model/deep_q_learn/deep_q_learn_{self.env.env_name()}.pth")
+=======
+        }, f"model/deep_q_learn/deep_q_learn{self.env.env_name()}.pth")
+>>>>>>> e907b42ccf10a71834c8e81773faeba9754606a4
 
         return scores, steps_per_episode, action_times
 

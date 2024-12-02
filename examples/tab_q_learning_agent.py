@@ -109,9 +109,9 @@ def main():
 
     # Run Q-learning on each environment
     for env_class, env_name in [
-        (LineWorld, "Line World"),
-        (GridWorld, "Grid World"),
-        (TicTacToe, "Tic Tac Toe"),
+        # (LineWorld, "Line World"),
+        # (GridWorld, "Grid World"),
+        # (TicTacToe, "Tic Tac Toe"),
         (Farkle, "Farkle"),
     ]:
         print(f"\nRunning Tabular Q-Learning on {env_name}...")
