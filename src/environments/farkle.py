@@ -14,6 +14,7 @@ class Farkle(Environment):
             target_score (int): The score required to win the game.
         """
         self.dice = np.zeros(6, dtype=int)
+        self.dice_visible = False
         self.current_score = 0
         self.total_score = 0
         self.done = False
@@ -49,9 +50,9 @@ class Farkle(Environment):
         Get the number of possible actions in the environment.
 
         Returns:
-            int: The number of actions (64 possible combinations of keeping dice).
+            int: The number of actions (64 possible combinations of keeping dice + 2 for roll and bank).
         """
-        return 64  # 2^6 possible combinations of keeping dice
+        return 66  # 2^6 possible combinations of keeping dice + 2 for roll and bank
 
     def num_rewards(self) -> int:
         """
@@ -92,6 +93,7 @@ class Farkle(Environment):
             int: The initial state ID.
         """
         self.dice = np.random.randint(1, 7, size=6)
+        self.dice_visible = False
         self.current_score = 0
         self.scores = [0, 0]
         self.done = False
@@ -122,6 +124,8 @@ class Farkle(Environment):
         Returns:
             int: 0 if the action is allowed, 1 if the action is forbidden.
         """
+        if action == -1 or action == 0:
+            return 0
         kept_dice = self._action_to_kept_dice(action)
         return int(not self._is_valid_keep(kept_dice))
 
@@ -139,9 +143,12 @@ class Farkle(Environment):
         Get the available actions in the current state.
 
         Returns:
-            np.ndarray: An array of available actions (1 to max_action - 1 for keeping dice, 0 for banking).
+            np.ndarray: An array of available actions (-1 for banking, 0 for rolling, 1+ for keeping dice).
         """
-        actions = [0]
+        if not hasattr(self, 'dice_visible') or not self.dice_visible:
+            return np.array([-1, 0], dtype=int)  # Only bank or roll when dice aren't visible
+            
+        actions = [-1]  # -1 for banking
         num_dice = len(self.dice)
         max_action = 2**num_dice
         for a in range(1, max_action):
@@ -154,7 +161,7 @@ class Farkle(Environment):
         Take a step in the environment based on the given action.
 
         Args:
-            action (int): The action to take.
+            action (int): The action to take (-1 for banking, 0 for rolling, 1+ for keeping dice).
 
         Returns:
             Tuple[int, float, bool, dict]: The next state ID, reward, done flag, and additional info.
@@ -174,10 +181,11 @@ class Farkle(Environment):
 
         reward = 0.0  # Default reward for non-terminal steps
 
-        if action == 0:  # Bank points
+        if action == -1:  # Bank points
             self.scores[self.current_player - 1] += self.turn_score
             self.turn_score = 0
             self.dice = np.random.randint(1, 7, size=6)
+            self.dice_visible = False
             self.hot_dice = False
 
             if (
@@ -206,13 +214,29 @@ class Farkle(Environment):
                 False,
                 {"current_player": self.current_player},
             )
+            
+        elif action == 0:  # Roll dice
+            self.dice_visible = True
+            if self._is_farkle():
+                self.turn_score = 0
+                self.current_player = 3 - self.current_player
+                self.dice = np.random.randint(1, 7, size=6)
+                self.dice_visible = False
+                return (
+                    self.state_id(),
+                    reward,
+                    False,
+                    {"current_player": self.current_player},
+                )
+            return self.state_id(), reward, False, {"current_player": self.current_player}
 
+        # Handle keeping dice (action > 0)
         kept_dice = self._action_to_kept_dice(action)
-
         if not self._is_valid_keep(kept_dice):
             self.turn_score = 0
             self.current_player = 3 - self.current_player
             self.dice = np.random.randint(1, 7, size=6)
+            self.dice_visible = False
             return (
                 self.state_id(),
                 reward,
@@ -230,6 +254,7 @@ class Farkle(Environment):
 
         # Roll the remaining dice
         self.dice = np.random.randint(1, 7, size=remaining_dice)
+        self.dice_visible = False
 
         return self.state_id(), reward, False, {"current_player": self.current_player}
 

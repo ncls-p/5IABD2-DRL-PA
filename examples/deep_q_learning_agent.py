@@ -17,7 +17,7 @@ def moving_average(data, window_size):
     return np.convolve(data, np.ones(window_size) / window_size, mode="valid")
 
 
-def run_dqn_example(env_class, env_name, num_episodes=10001):
+def run_dqn_example(env_class, env_name, num_episodes=10000):
     env = env_class()
     state_size = len(env.state_vector())
     action_size = env.num_actions()
@@ -39,12 +39,10 @@ def run_dqn_example(env_class, env_name, num_episodes=10001):
         batch_size=batch_size,
     )
 
-    scores, steps_per_episode, action_times = agent.train(
-        num_episodes=num_episodes
-    )
+    scores, steps_per_episode, action_times = agent.train(num_episodes=num_episodes)
 
     # Plot scores
-    '''plt.figure(figsize=(15, 7))
+    """plt.figure(figsize=(15, 7))
     plt.subplot(3, 1, 1)
     plot_metrics(scores, "Scores", env_name)
 
@@ -60,7 +58,7 @@ def run_dqn_example(env_class, env_name, num_episodes=10001):
     plt.savefig(
         f"src/metrics/plot/dqn/dqn_{env_name.lower().replace(' ', '_')}_metrics.png"
     )
-    plt.close()'''
+    plt.close()"""
 
     return scores, steps_per_episode, action_times
 
@@ -102,9 +100,9 @@ def print_scores_at_milestones(scores, env_name):
 
 def main():
     for env_class, env_name in [
-        (LineWorld, "Line World"),
-        (GridWorld, "Grid World"),
-        (TicTacToe, "Tic Tac Toe"),
+        # (LineWorld, "Line World"),
+        # (GridWorld, "Grid World"),
+        # (TicTacToe, "Tic Tac Toe"),
         (Farkle, "Farkle"),
     ]:
         scores, steps_per_episode, action_times = run_dqn_example(env_class, env_name)

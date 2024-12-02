@@ -215,7 +215,7 @@ def main():
         #     "gamma": 0.95,
         # }
         (Farkle, "Farkle"): {
-            "num_episodes": 1000,
+            "num_episodes": 10000,
             "learning_rate": 0.001,
             "gamma": 0.95,
         }

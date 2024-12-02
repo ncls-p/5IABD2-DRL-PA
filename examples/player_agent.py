@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import time
 from typing import Type
 
 import numpy as np
@@ -30,9 +31,7 @@ class RandomAgent:
 class PlayerAgent:
     def choose_action(self, available_actions: np.ndarray, env) -> int:
         if isinstance(env, Farkle):
-            return self.choose_farkle_action(
-                available_actions, env.dice[env.current_player - 1]
-            )
+            return self.choose_farkle_action(available_actions, env)
         elif isinstance(env, TicTacToe):
             return self.choose_tic_tac_toe_action(available_actions)
         elif isinstance(env, LineWorld):
@@ -77,42 +76,48 @@ class PlayerAgent:
     def choose_grid_world_action(self, available_actions: np.ndarray) -> int:
         return self.choose_zqsd_action(available_actions, None)
 
-    def choose_farkle_action(
-        self, available_actions: np.ndarray, dice: np.ndarray
-    ) -> int:
-        while True:
-            console.print(
-                Panel(
-                    "0: Bank points\nEnter dice numbers (1-6) to keep specific dice.",
-                    title="Options",
-                    expand=False,
-                )
+    def choose_farkle_action(self, available_actions: np.ndarray, env: Farkle) -> int:
+        """
+        Choose an action for the Farkle game.
+        """
+        if not hasattr(env, "dice_visible") or not env.dice_visible:
+            print("\nDo you want to:")
+            print(
+                "-1: Bank your points (current turn score: {})".format(env.turn_score)
             )
-
-            action = console.input(
-                "[bold cyan]Enter your action[/] (0 to bank, or dice numbers to keep, e.g., '136' to keep 1st, 3rd, and 6th dice): "
-            ).strip()
-
-            if action == "0":
-                return 0  # Bank points
-
-            kept_dice = re.findall(r"[1-6]", action)
-            kept_dice = [int(d) for d in kept_dice]
-            kept_dice = list(set(kept_dice))  # Remove duplicates
-
-            if not kept_dice:
-                console.print(
-                    "[bold red]Invalid input. Please enter valid dice numbers between 1 and 6.[/]"
-                )
-                continue
-
-            binary_action = sum(2 ** (i - 1) for i in kept_dice)
-            if binary_action in available_actions:
-                return binary_action
-            else:
-                console.print(
-                    "[bold red]Invalid action. The selected dice do not form a valid scoring combination. Please choose again.[/]"
-                )
+            print(" 0: Roll the dice")
+            while True:
+                try:
+                    choice = input("Enter your choice (-1 or 0): ")
+                    action = int(choice)
+                    if action in available_actions:
+                        return action
+                    print("Invalid choice. Please try again.")
+                except ValueError:
+                    print("Invalid input. Please enter a number.")
+        else:
+            print("\nChoose dice to keep (1-6) or bank points (-1)")
+            print("For example: '136' keeps the 1st, 3rd, and 6th dice")
+            while True:
+                try:
+                    choice = input("Enter your choice: ")
+                    if choice == "-1":
+                        return -1
+                    if not choice:
+                        print("Invalid choice. Please try again.")
+                        continue
+                    # Convert input like "136" to action number
+                    kept_dice = [int(x) for x in choice if x.isdigit()]
+                    if not all(1 <= x <= 6 for x in kept_dice):
+                        print("Invalid dice positions. Use numbers 1-6.")
+                        continue
+                    # Convert to binary action
+                    action = sum(2 ** (x - 1) for x in kept_dice)
+                    if action in available_actions:
+                        return action
+                    print("Invalid combination. Try different dice.")
+                except ValueError:
+                    print("Invalid input. Please enter valid dice positions.")
 
     def choose_tic_tac_toe_action(self, available_actions: np.ndarray) -> int:
         while True:
@@ -261,48 +266,16 @@ def play_game(
         while not done:
             display_farkle_state(env)
 
-            # Print state vector
-            console.print(f"[bold blue]State vector: {env.state_vector()}[/]")
-
             if env.current_player == human_player:
-                action = player_agent.choose_farkle_action(
-                    env.available_actions(), env.dice[env.current_player - 1]
-                )
-                console.print(f"[bold cyan]You chose action: {action}[/]")
+                action = player_agent.choose_farkle_action(env.available_actions(), env)
             else:
                 action = random_agent.choose_action(env.available_actions())
-                console.print(
-                    f"[bold yellow]AI Player {env.current_player} chose action: {action}[/]"
-                )
+                time.sleep(1)
 
-            # Print action vector
-            console.print(f"[bold blue]Action vector: {env.action_vector(action)}[/]")
-
-            # Take the action and get the result
             _, reward, done, info = env.step(action)
+            total_reward += reward
+            episode_length += 1
 
-            # Update total_reward only for the human player
-            if env.current_player == human_player:
-                total_reward += reward
-
-            # Check if the turn ended (either by banking or farkling)
-            if info.get("turn_ended", False):
-                console.print(
-                    f"[bold magenta]Turn ended for Player {3 - env.current_player}[/]"
-                )
-                console.print(f"[bold magenta]Reward: {reward}[/]")
-
-            # Check for game end condition
-            if done:
-                winner = info.get("winner")
-                if winner:
-                    if winner == human_player:
-                        console.print("[bold green]You win![/]")
-                    else:
-                        console.print(f"[bold red]You lose. Player {winner} wins.[/]")
-                else:
-                    console.print("[bold yellow]It's a tie![/]")
-                break
     elif isinstance(env, TicTacToe):
         while not done:
             console.print(display_tic_tac_toe(env))
@@ -384,8 +357,6 @@ def play_game(
     console.print("\n[bold green]Game Over![/] Final state:")
     if isinstance(env, Farkle):
         display_farkle_state(env)
-    elif isinstance(env, TicTacToe):
-        console.print(display_tic_tac_toe(env))
 
     console.print(f"[bold blue]Total reward: {total_reward}[/]")
     console.print(f"[bold blue]Episode length: {episode_length}[/]")
@@ -395,7 +366,10 @@ def play_game(
 
 
 def display_farkle_state(env: Farkle):
-    dice_display = PlayerAgent.format_dice(env.dice[env.current_player - 1])
+    if hasattr(env, "dice_visible") and env.dice_visible:
+        dice_display = PlayerAgent.format_dice(env.dice)
+    else:
+        dice_display = "[bold yellow]Dice not visible - choose to roll or bank[/]"
     turn_score = f"Current turn score: {env.turn_score}"
     player1_score = f"Player 1 score: {env.scores[0]}"
     player2_score = f"Player 2 score: {env.scores[1]}"

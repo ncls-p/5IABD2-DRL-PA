@@ -145,7 +145,7 @@ class DoubleDQNAgent:
                 if len(self.memory) >= self.batch_size:
                     experiences, indices, weights = self.memory.sample(self.beta)
                     self.learn(experiences, indices, weights)
-                
+
                 episode_action_times.append(time.time() - start_time)
 
             # Decrease epsilon after each episode

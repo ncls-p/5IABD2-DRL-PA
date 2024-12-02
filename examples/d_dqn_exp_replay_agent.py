@@ -42,7 +42,7 @@ def plot_metrics(data, metric_name, env_name):
     plt.grid(True)
 
 
-def run_ddqn_exp_rep_example(env_class, env_name, num_episodes=100001):
+def run_ddqn_exp_rep_example(env_class, env_name, num_episodes=10000):
     env = env_class()
     state_size = len(env.state_vector())
     action_size = env.num_actions()
@@ -77,6 +77,7 @@ def print_scores_at_milestones(scores, env_name):
             avg_score = sum(scores[milestone - 100 : milestone]) / 100
             print(f"At {milestone} episodes: {avg_score:.2f}")
 
+
 def plot_metrics(data, metric_name, env_name):
     moving_avg = moving_average(data, window_size=100)
     plt.plot(data, color="gray", alpha=0.2, label=f"Raw {metric_name}")
@@ -106,12 +107,14 @@ def plot_metrics(data, metric_name, env_name):
 
 def main():
     for env_class, env_name in [
-        (LineWorld, "Line World"),
-        (GridWorld, "Grid World"),
-        (TicTacToe, "Tic Tac Toe"),
+        # (LineWorld, "Line World"),
+        # (GridWorld, "Grid World"),
+        # (TicTacToe, "Tic Tac Toe"),
         (Farkle, "Farkle"),
     ]:
-        scores, steps_per_episode, action_times = run_ddqn_exp_rep_example(env_class, env_name)
+        scores, steps_per_episode, action_times = run_ddqn_exp_rep_example(
+            env_class, env_name
+        )
 
         # Create a figure with three subplots
         plt.figure(figsize=(15, 12))

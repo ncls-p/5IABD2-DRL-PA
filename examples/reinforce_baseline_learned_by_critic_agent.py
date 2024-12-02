@@ -183,18 +183,18 @@ def main():
         #     "lr_value": 0.00001,
         #     "gamma": 0.9,
         # },
-        (TicTacToe, "Tic Tac Toe"): {
-            "num_episodes": 100000,
-            "lr_policy": 0.0005,
-            "lr_value": 0.0005,
-            "gamma": 0.95,
-        },
-        # (Farkle, "Farkle"): {
-        #     "num_episodes": 1000,
-        #     "lr_policy": 0.001,
-        #     "lr_value": 0.001,
+        # (TicTacToe, "Tic Tac Toe"): {
+        #     "num_episodes": 70000,
+        #     "lr_policy": 0.0005,
+        #     "lr_value": 0.0005,
         #     "gamma": 0.95,
-        # }
+        # },
+        (Farkle, "Farkle"): {
+            "num_episodes": 10000,
+            "lr_policy": 0.001,
+            "lr_value": 0.001,
+            "gamma": 0.95,
+        }
     }
 
     for (env_class, env_name), config in env_configs.items():

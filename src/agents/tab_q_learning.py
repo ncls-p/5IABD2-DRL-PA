@@ -4,8 +4,17 @@ import time
 from src.environments import Environment
 import pickle
 
+
 class TabularQLearningAgent:
-    def __init__(self, env: Environment, learning_rate=0.1, gamma=0.99, epsilon_start=1.0, epsilon_min=0.01, epsilon_decay=0.995):
+    def __init__(
+        self,
+        env: Environment,
+        learning_rate=0.1,
+        gamma=0.99,
+        epsilon_start=1.0,
+        epsilon_min=0.01,
+        epsilon_decay=0.995,
+    ):
         self.env = env
         self.state_size = self.env.num_states()
         self.action_size = self.env.num_actions()
@@ -30,7 +39,7 @@ class TabularQLearningAgent:
         scores = []
         steps_per_episode = []
         action_times = []
-        
+
         for episode in range(num_episodes):
             state = self.env.reset()
             done = False
@@ -42,13 +51,15 @@ class TabularQLearningAgent:
                 start_time = time.time()
                 action = self.choose_action(state)
                 episode_action_times.append(time.time() - start_time)
-                
+
                 next_state, reward, done, _ = self.env.step(action)
                 steps += 1
 
                 # Q-learning update rule
                 best_next_action = np.argmax(self.q_table[next_state])
-                td_target = reward + self.gamma * self.q_table[next_state, best_next_action]
+                td_target = (
+                    reward + self.gamma * self.q_table[next_state, best_next_action]
+                )
                 td_error = td_target - self.q_table[state, action]
                 self.q_table[state, action] += self.learning_rate * td_error
 
@@ -62,11 +73,13 @@ class TabularQLearningAgent:
             action_times.append(np.mean(episode_action_times))
 
             if (episode + 1) % 100 == 0:
-                print(f"Episode {episode + 1}/{num_episodes}, " 
-                      f"Avg Score: {np.mean(scores[-100:]):.2f}, "
-                      f"Steps: {steps}, "
-                      f"Avg Action Time: {np.mean(episode_action_times):.4f}s")
-        
+                print(
+                    f"Episode {episode + 1}/{num_episodes}, "
+                    f"Avg Score: {np.mean(scores[-100:]):.2f}, "
+                    f"Steps: {steps}, "
+                    f"Avg Action Time: {np.mean(episode_action_times):.4f}s"
+                )
+
         filepath = f"model/tab_q_learn/q_table_{self.env.env_name()}.pkl"
         with open(filepath, "wb") as f:
             pickle.dump(self.q_table, f)

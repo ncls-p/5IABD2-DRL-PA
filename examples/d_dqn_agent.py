@@ -80,9 +80,9 @@ def plot_metrics(data, metric_name, env_name):
 
 def main():
     for env_class, env_name in [
-        (LineWorld, "Line World"),
-        (GridWorld, "Grid World"),
-        (TicTacToe, "Tic Tac Toe"),
+        # (LineWorld, "Line World"),
+        # (GridWorld, "Grid World"),
+        # (TicTacToe, "Tic Tac Toe"),
         (Farkle, "Farkle"),
     ]:
         scores, steps_per_episode, action_times = run_ddqn_example(env_class, env_name)

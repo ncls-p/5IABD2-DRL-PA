@@ -184,13 +184,13 @@ def main():
         #     "gamma": 0.9,
         # }
         # (TicTacToe, "Tic Tac Toe"): {
-        #     "num_episodes": 100000,
+        #     "num_episodes": 40000,
         #     "lr_policy": 0.0005,
         #     "lr_value": 0.0005,
         #     "gamma": 0.95,
         # }
         (Farkle, "Farkle"): {
-            "num_episodes": 1000,
+            "num_episodes": 10000,
             "lr_policy": 0.001,
             "lr_value": 0.001,
             "gamma": 0.95,

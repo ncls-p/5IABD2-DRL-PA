@@ -53,7 +53,7 @@ def run_mcts_example(
     env_class,
     env_name,
     num_simulations=100,
-    num_episodes=100000,
+    num_episodes=10000,
     exploration_weight=1.414,
     simulation_temp=0.5,
 ):
@@ -116,19 +116,19 @@ def main():
         #     "num_episodes": 100000,
         #     "exploration_weight": 1.414,
         # },
-        (GridWorld, "Grid World"): {
-            "num_simulations": 1000,
-            "num_episodes": 100000,
-            "exploration_weight": 4,
-        },
-        (TicTacToe, "Tic Tac Toe"): {
-            "num_simulations": 2000,
-            "num_episodes": 100000,
-            "exploration_weight": 6,
-        },
+        # (GridWorld, "Grid World"): {
+        #     "num_simulations": 1000,
+        #     "num_episodes": 100000,
+        #     "exploration_weight": 4,
+        # },
+        # (TicTacToe, "Tic Tac Toe"): {
+        #     "num_simulations": 2000,
+        #     "num_episodes": 100000,
+        #     "exploration_weight": 6,
+        # },
         (Farkle, "Farkle"): {
             "num_simulations": 3000,
-            "num_episodes": 100000,
+            "num_episodes": 10000,
             "exploration_weight": 8,
         },
     }
