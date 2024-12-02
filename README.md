@@ -284,6 +284,7 @@ python examples/train_agent.py
 │   ├── reinforce_baseline_learned_by_critic.py
 │   ├── reinforce_mean_baseline_agent.py
 │   ├── tab_q_learning_agent.py
+│   ├── ppo_agent.py
 ├── src/
 │   ├── agents/
 │   │   ├── __init__.py
@@ -295,6 +296,7 @@ python examples/train_agent.py
 │   │   ├── reinforce.py
 │   │   ├── reinforce_mean_baseline.py
 │   │   ├── tab_q_learning.py
+│   │   ├── ppo.py
 │   ├── environments/
 │   │   ├── __init__.py
 │   │   ├── farkle.py
