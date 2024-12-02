@@ -25,6 +25,9 @@ class Farkle(Environment):
         self.scores = [0, 0]  # Scores for player 1 and player 2
         self.final_round = False
         self.final_round_starter = None
+    
+    def env_name(self):
+        return "farkle"
 
     def render(self) -> None:
         """

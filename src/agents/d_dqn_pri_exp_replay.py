@@ -8,6 +8,13 @@ from typing import Any, List, Tuple
 from src.environments import Environment
 import time
 
+# Set device (GPU if available, else CPU)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def convert_list_to_tensor(data_list, dtype=torch.float32, device=device):
+        # Convert list to numpy array and then to a tensor
+        return torch.tensor(np.array(data_list), dtype=dtype, device=device)
+
 # Q-Network for estimating Q-values
 class QNetwork(nn.Module):
     def __init__(self, state_size, action_size, hidden_size=64):
@@ -60,7 +67,7 @@ class PrioritizedReplayBuffer:
         weights = (total * probs[indices]) ** -beta
         weights /= weights.max()  # Normalize for stability
 
-        return experiences, indices, torch.FloatTensor(weights)
+        return experiences, indices, torch.FloatTensor(weights).to(device)
 
     def update_priorities(self, indices, td_errors):
         for idx, error in zip(indices, td_errors):
@@ -81,8 +88,8 @@ class DoubleDQNAgent:
         self.beta = beta
 
         # Policy and target networks
-        self.q_network = QNetwork(state_size, action_size)
-        self.target_network = QNetwork(state_size, action_size)
+        self.q_network = QNetwork(state_size, action_size).to(device)
+        self.target_network = QNetwork(state_size, action_size).to(device)
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=lr)
 
         # Initialize target network parameters to match the policy network
@@ -98,7 +105,7 @@ class DoubleDQNAgent:
         if random.random() < epsilon:
             return random.choice(self.env.available_actions())
         else:
-            state = torch.FloatTensor(state).unsqueeze(0)
+            state = torch.FloatTensor(state).unsqueeze(0).to(device)  # Move state to GPU
             with torch.no_grad():
                 q_values = self.q_network(state)
             return torch.argmax(q_values).item()
@@ -126,8 +133,8 @@ class DoubleDQNAgent:
 
                 # TD-error as initial priority
                 with torch.no_grad():
-                    td_error = reward + self.gamma * self.q_network(torch.FloatTensor(next_state).unsqueeze(0)).max(1)[0].item() - \
-                               self.q_network(torch.FloatTensor(state).unsqueeze(0))[0, action].item()
+                    td_error = reward + self.gamma * self.q_network(torch.FloatTensor(next_state).unsqueeze(0).to(device)).max(1)[0].item() - \
+                               self.q_network(torch.FloatTensor(state).unsqueeze(0).to(device))[0, action].item()
 
                 self.memory.add((state, action, reward, next_state, done), td_error)
 
@@ -158,15 +165,17 @@ class DoubleDQNAgent:
 
     def learn(self, experiences, indices, weights):
         states, actions, rewards, next_states, dones = zip(*experiences)
-        states = torch.FloatTensor(states)
-        actions = torch.LongTensor(actions).unsqueeze(1)
-        rewards = torch.FloatTensor(rewards)
-        next_states = torch.FloatTensor(next_states)
-        dones = torch.FloatTensor(dones)
-        weights = weights.unsqueeze(1)
+
+        # Convert lists to NumPy arrays first, then to tensors
+        states = convert_list_to_tensor(states, dtype=torch.float32)
+        actions = convert_list_to_tensor(actions, dtype=torch.long).unsqueeze(1)  # Make sure actions is (batch_size, 1)
+        rewards = convert_list_to_tensor(rewards, dtype=torch.float32)
+        next_states = convert_list_to_tensor(next_states, dtype=torch.float32)
+        dones = convert_list_to_tensor(dones, dtype=torch.float32)
+        weights = weights.unsqueeze(1).to(device)
 
         # Compute Q-values and Double DQN targets
-        q_values = self.q_network(states).gather(1, actions)
+        q_values = self.q_network(states).gather(1, actions)  # actions now has shape (batch_size, 1)
 
         with torch.no_grad():
             best_actions = self.q_network(next_states).argmax(1).unsqueeze(1)
