@@ -78,13 +78,20 @@ class DoubleDQNAgent:
 
     def choose_action(self, state, epsilon=0.1):
         """Epsilon-greedy action selection."""
+        available_actions = self.env.available_actions()
+
         if random.random() < epsilon:
-            return random.choice(self.env.available_actions())
-        else:
-            state = torch.FloatTensor(state).unsqueeze(0).to(device)
-            with torch.no_grad():
-                q_values = self.q_network(state)
-            return torch.argmax(q_values).item()
+            return np.random.choice(available_actions)
+
+        state = torch.FloatTensor(state).unsqueeze(0).to(device)
+        with torch.no_grad():
+            q_values = self.q_network(state)
+            # Subtract 1 from action index to convert back to environment's action space
+            action_idx = q_values.argmax(1).item() - 1
+            # If the chosen action is not available, randomly choose from available actions
+            if action_idx not in available_actions:
+                return np.random.choice(available_actions)
+            return action_idx
 
     def train(
         self,
@@ -125,7 +132,7 @@ class DoubleDQNAgent:
                 if len(self.memory) >= self.batch_size:
                     experiences = self.memory.sample()
                     self.learn(experiences)
-                
+
                 episode_action_times.append(time.time() - start_time)
 
             # Decrease epsilon after each episode
@@ -140,7 +147,7 @@ class DoubleDQNAgent:
             if episode % target_update_freq == 0:
                 self.update_target_network()
 
-            if (episode + 1) % 100 == 0:
+            if (episode + 1) % 1 == 0:
                 print(
                     f"Episode {episode + 1}/{num_episodes}, Avg Score: {np.mean(scores[-100:]):.2f}"
                 )
@@ -151,30 +158,30 @@ class DoubleDQNAgent:
         """Update the Q-network with Double DQN targets."""
         states, actions, rewards, next_states, dones = zip(*experiences)
 
-        # Move data to GPU
-        states = torch.FloatTensor(states).to(device)
-        actions = torch.LongTensor(actions).unsqueeze(1).to(device)
-        rewards = torch.FloatTensor(rewards).to(device)
-        next_states = torch.FloatTensor(next_states).to(device)
-        dones = torch.FloatTensor(dones).to(device)
+        # Convert to numpy arrays first, then to tensors
+        states = torch.FloatTensor(np.array(states)).to(device)
+        # Add 1 to actions to handle negative indices (-1 becomes 0, 0 becomes 1, etc.)
+        actions = torch.LongTensor(np.array(actions) + 1).unsqueeze(1).to(device)
+        rewards = torch.FloatTensor(np.array(rewards)).to(device)
+        next_states = torch.FloatTensor(np.array(next_states)).to(device)
+        dones = torch.FloatTensor(np.array(dones)).to(device)
 
-        # Compute current Q-values
-        q_values = self.q_network(states).gather(1, actions).squeeze()
+        # Get current Q values
+        q_values = self.q_network(states)
+        current_q = q_values.gather(1, actions).squeeze()
 
-        # Compute target Q-values using Double DQN
-        # Use Q-network to select the best action at the next state
-        next_action_indices = self.q_network(next_states).argmax(1).unsqueeze(1)
+        # Get next Q values using Double DQN
+        with torch.no_grad():
+            # Use Q-network to select actions
+            next_actions = self.q_network(next_states).argmax(1, keepdim=True)
+            # Use target network to evaluate actions
+            next_q_values = (
+                self.target_network(next_states).gather(1, next_actions).squeeze()
+            )
+            targets = rewards + (1 - dones) * self.gamma * next_q_values
 
-        # Use the target network to compute Q-values for these selected actions
-        next_q_values = (
-            self.target_network(next_states).gather(1, next_action_indices).squeeze()
-        )
-
-        # Calculate the target Q-value
-        targets = rewards + (1 - dones) * self.gamma * next_q_values
-
-        # Loss and backpropagation
-        loss = nn.MSELoss()(q_values, targets)
+        # Compute loss and update
+        loss = nn.MSELoss()(current_q, targets)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()

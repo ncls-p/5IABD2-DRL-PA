@@ -48,7 +48,7 @@ class DQNAgent:
 
         # CUDA: Check if GPU is available
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
+
         # Neural networks for policy (Q-function) and target Q-function
         self.q_network = QNetwork(state_size, action_size).to(self.device)
         self.target_network = QNetwork(state_size, action_size).to(self.device)
@@ -72,7 +72,14 @@ class DQNAgent:
                 q_values = self.q_network(state)
             return torch.argmax(q_values).item()
 
-    def train(self, num_episodes, epsilon_start=1.0, epsilon_end=0.01, epsilon_decay=0.999, target_update_freq=10):
+    def train(
+        self,
+        num_episodes,
+        epsilon_start=1.0,
+        epsilon_end=0.01,
+        epsilon_decay=0.999,
+        target_update_freq=10,
+    ):
         scores = []
         epsilon = epsilon_start
         action_times = []
@@ -103,7 +110,7 @@ class DQNAgent:
                 if len(self.memory) >= self.batch_size:
                     experiences = self.memory.sample()
                     self.learn(experiences)
-                
+
                 episode_steps += 1
 
             # Decrease epsilon after each episode
@@ -116,19 +123,17 @@ class DQNAgent:
             if episode % target_update_freq == 0:
                 self.update_target_network()
 
-            if (episode + 1) % 100 == 0:
+            if (episode + 1) % 1 == 0:
                 print(f"Episode {episode + 1}/{num_episodes}, Avg Score: {np.mean(scores[-100:]):.2f}")
 
-
-        torch.save({
-            'q_network_state_dict': self.q_network.state_dict(),
-            'target_network_state_dict': self.target_network.state_dict(),
-            'optimizer_state_dict': self.optimizer.state_dict(),
-<<<<<<< HEAD
-        }, f"model/deep_q_learn/deep_q_learn_{self.env.env_name()}.pth")
-=======
-        }, f"model/deep_q_learn/deep_q_learn{self.env.env_name()}.pth")
->>>>>>> e907b42ccf10a71834c8e81773faeba9754606a4
+        torch.save(
+            {
+                "q_network_state_dict": self.q_network.state_dict(),
+                "target_network_state_dict": self.target_network.state_dict(),
+                "optimizer_state_dict": self.optimizer.state_dict(),
+            },
+            f"model/deep_q_learn/deep_q_learn_{self.env.env_name()}.pth",
+        )
 
         return scores, steps_per_episode, action_times
 

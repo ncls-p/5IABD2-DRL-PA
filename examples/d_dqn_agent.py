@@ -18,7 +18,7 @@ def moving_average(data, window_size):
     return np.convolve(data, np.ones(window_size) / window_size, mode="valid")
 
 
-def run_ddqn_example(env_class, env_name, num_episodes=100001):
+def run_ddqn_example(env_class, env_name, num_episodes=10000):
     env = env_class()
     state_size = len(env.state_vector())
     action_size = env.num_actions()
@@ -26,7 +26,11 @@ def run_ddqn_example(env_class, env_name, num_episodes=100001):
     gamma = 0.99
     target_update_freq = 10
 
-    # Initialize DDQN agent
+    # Ensure action_size is valid
+    if action_size <= 0:
+        raise ValueError(f"Invalid action_size: {action_size}")
+
+    # Initialize DDQN agent with proper action size
     agent = DoubleDQNAgent(
         env,
         state_size=state_size,

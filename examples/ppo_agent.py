@@ -61,7 +61,7 @@ def print_scores_at_milestones(scores, env_name):
 def run_ppo_example(
     env_class,
     env_name,
-    num_episodes=100000,
+    num_episodes=10000,
     learning_rate=0.001,
     gamma=0.99,
     clip_epsilon=0.2,

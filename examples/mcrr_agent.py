@@ -86,26 +86,26 @@ def main():
     os.makedirs("src/metrics/plot/mcrr", exist_ok=True)
 
     env_configs = {
-        (LineWorld, "Line World"): {
-            "num_rollouts": 100,
-            "num_episodes": 100000,
-            "gamma": 0.99,
-        },
-        (GridWorld, "Grid World"): {
-            "num_rollouts": 200,
-            "num_episodes": 100000,
-            "gamma": 0.99,
-        },
-        (TicTacToe, "Tic Tac Toe"): {
-            "num_rollouts": 500,
-            "num_episodes": 100000,
-            "gamma": 0.95,
-        },
-        # (Farkle, "Farkle"): {
-        #     "num_rollouts": 1000,
+        # (LineWorld, "Line World"): {
+        #     "num_rollouts": 100,
+        #     "num_episodes": 100000,
+        #     "gamma": 0.99,
+        # },
+        # (GridWorld, "Grid World"): {
+        #     "num_rollouts": 200,
+        #     "num_episodes": 100000,
+        #     "gamma": 0.99,
+        # },
+        # (TicTacToe, "Tic Tac Toe"): {
+        #     "num_rollouts": 500,
         #     "num_episodes": 100000,
         #     "gamma": 0.95,
         # },
+        (Farkle, "Farkle"): {
+            "num_rollouts": 1000,
+            "num_episodes": 10000,
+            "gamma": 0.95,
+        },
     }
 
     for (env_class, env_name), config in env_configs.items():

@@ -72,7 +72,7 @@ class TabularQLearningAgent:
             steps_per_episode.append(steps)
             action_times.append(np.mean(episode_action_times))
 
-            if (episode + 1) % 100 == 0:
+            if (episode + 1) % 1 == 0:
                 print(
                     f"Episode {episode + 1}/{num_episodes}, "
                     f"Avg Score: {np.mean(scores[-100:]):.2f}, "

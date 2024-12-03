@@ -73,7 +73,9 @@ class RandomRolloutAgent:
 
         return available_actions[np.argmax(action_values)]
 
-    def train(self, num_episodes: int = 1000, max_steps: int = 1000) -> Tuple[List[float], List[int], List[float]]:
+    def train(
+        self, num_episodes: int = 10000, max_steps: int = 1000
+    ) -> Tuple[List[float], List[int], List[float]]:
         scores, steps_per_episode, action_times = [], [], []
         writer = self._create_tensorboard_writer()
 
@@ -120,6 +122,29 @@ class RandomRolloutAgent:
             scores.append(episode_reward)
             steps_per_episode.append(episode_steps)
             action_times.append(np.mean(episode_action_times))
+
+            # Print detailed metrics every episode
+            if (episode + 1) % 1 == 0:
+                avg_score = (
+                    np.mean(scores[-100:]) if len(scores) >= 100 else np.mean(scores)
+                )
+                avg_steps = (
+                    np.mean(steps_per_episode[-100:])
+                    if len(steps_per_episode) >= 100
+                    else np.mean(steps_per_episode)
+                )
+                avg_time = (
+                    np.mean(action_times[-100:])
+                    if len(action_times) >= 100
+                    else np.mean(action_times)
+                )
+                print(
+                    f"Episode {episode + 1}/{num_episodes}, "
+                    f"Avg Score: {avg_score:.2f}, "
+                    f"Avg Steps: {avg_steps:.2f}, "
+                    f"Avg Time/Step: {avg_time*1000:.2f}ms, "
+                    f"Best Score: {self.best_episode_reward:.2f}"
+                )
 
         writer.close()
         return scores, steps_per_episode, action_times

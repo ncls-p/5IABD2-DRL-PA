@@ -46,7 +46,7 @@ def plot_metrics(data, title, env_name, window_size=100):
     plt.legend()
 
 
-def run_tab_q_learn_example(env_class, env_name, num_episodes=10001):
+def run_tab_q_learn_example(env_class, env_name, num_episodes=10000):
     env = env_class()
     learning_rate = 0.0005 * 2
     gamma = 0.99
