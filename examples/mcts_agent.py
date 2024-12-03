@@ -16,7 +16,6 @@ from src.environments.tic_tac_toe import TicTacToe
 def plot_metrics(data, title, env_name, window_size=100):
     plt.plot(data, color="gray", alpha=0.3, label="Raw")
 
-    # Calculate moving average
     moving_avg = np.convolve(data, np.ones(window_size) / window_size, mode="valid")
     plt.plot(
         range(window_size - 1, len(data)),
@@ -25,7 +24,6 @@ def plot_metrics(data, title, env_name, window_size=100):
         label=f"{window_size}-Episode Moving Average",
     )
 
-    # Add milestone markers
     milestones = [1000, 10000, 100000, 1000000]
     for milestone in milestones:
         if milestone <= len(data):
@@ -70,18 +68,14 @@ def run_mcts_example(
         num_episodes=num_episodes
     )
 
-    # Create a figure with three subplots
     plt.figure(figsize=(15, 12))
 
-    # Plot scores
     plt.subplot(3, 1, 1)
     plot_metrics(scores, "Scores", env_name)
 
-    # Plot steps per episode
     plt.subplot(3, 1, 2)
     plot_metrics(steps_per_episode, "Steps per Episode", env_name)
 
-    # Plot action times
     plt.subplot(3, 1, 3)
     plot_metrics(action_times, "Action Time (seconds)", env_name)
 
@@ -91,7 +85,6 @@ def run_mcts_example(
     )
     plt.close()
 
-    # Print statistics at milestones
     print_scores_at_milestones(scores, env_name)
 
     return scores, steps_per_episode, action_times

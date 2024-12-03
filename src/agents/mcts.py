@@ -21,7 +21,7 @@ class MCTSNode:
         action: Optional[int] = None,
         parent: Optional["MCTSNode"] = None,
     ):
-        self.state_id = state_id  # Changed from state to state_id
+        self.state_id = state_id
         self.action = action
         self.parent = parent
         self.children: List[MCTSNode] = []
@@ -73,9 +73,7 @@ class MCTSAgent:
         self.player = 1
         self.exploration_weight = exploration_weight
         self.simulation_temp = simulation_temp
-        self._available_actions: np.ndarray = np.array(
-            [], dtype=int
-        )  # Initialize as empty array
+        self._available_actions: np.ndarray = np.array([], dtype=int)
         self._last_state = None
         self._value_stats = {
             "min": float("inf"),
@@ -135,7 +133,6 @@ class MCTSAgent:
         return 0.5 * (z_score + v_norm)
 
     def simulate(self, env: Environment, max_steps: int = 50) -> float:
-        # Use state_id() for hashing instead of env.state
         state_hash = env.state_id()
         self._total_sims += 1
 
@@ -176,7 +173,7 @@ class MCTSAgent:
         return total_reward
 
     def choose_action(self, state_id: int, temperature: float = 1.0) -> int:
-        root = MCTSNode(state_id)  # Changed from state to state_id
+        root = MCTSNode(state_id)
         available_actions = self.get_available_actions(state_id)
         root.untried_actions = list(available_actions)
 
@@ -221,13 +218,10 @@ class MCTSAgent:
         visit_threshold = max(2, int(np.sqrt(self.num_simulations)))
         qualified_children = [c for c in root.children if c.visits >= visit_threshold]
 
-        # Handle case where no qualified children exist
         if not qualified_children and not root.untried_actions:
-            # If no actions are available, return 0 as a fallback
             return 0
 
         if not qualified_children:
-            # Ensure untried_actions is not empty before choosing
             return root.untried_actions[0] if root.untried_actions else 0
 
         if not qualified_children:
@@ -251,7 +245,6 @@ class MCTSAgent:
             chosen_idx = np.random.choice(len(qualified_children), p=probs)
         chosen_action = qualified_children[chosen_idx].action
         if chosen_action is None:
-            # Fallback to first available action or 0
             return root.untried_actions[0] if root.untried_actions else 0
 
         self._last_action = chosen_action

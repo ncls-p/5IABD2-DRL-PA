@@ -26,11 +26,9 @@ def run_ddqn_example(env_class, env_name, num_episodes=10000):
     gamma = 0.99
     target_update_freq = 10
 
-    # Ensure action_size is valid
     if action_size <= 0:
         raise ValueError(f"Invalid action_size: {action_size}")
 
-    # Initialize DDQN agent with proper action size
     agent = DoubleDQNAgent(
         env,
         state_size=state_size,
@@ -40,7 +38,6 @@ def run_ddqn_example(env_class, env_name, num_episodes=10000):
         target_update_freq=target_update_freq,
     )
 
-    # Train the agent
     scores, steps_per_episode, action_times = agent.train(num_episodes=num_episodes)
 
     return scores, steps_per_episode, action_times
@@ -91,24 +88,19 @@ def main():
     ]:
         scores, steps_per_episode, action_times = run_ddqn_example(env_class, env_name)
 
-        # Create a figure with three subplots
         plt.figure(figsize=(15, 12))
 
-        # Plot scores
         plt.subplot(3, 1, 1)
         plot_metrics(scores, "Scores", env_name)
 
-        # Plot steps per episode
         plt.subplot(3, 1, 2)
         plot_metrics(steps_per_episode, "Steps per Episode", env_name)
 
-        # Plot action times
         plt.subplot(3, 1, 3)
         plot_metrics(action_times, "Action Time (seconds)", env_name)
 
         plt.tight_layout()
 
-        # Save the figure
         plt.savefig(
             f"src/metrics/plot/d_dqn/ddqn_{env_name.lower().replace(' ', '_')}_metrics.png"
         )

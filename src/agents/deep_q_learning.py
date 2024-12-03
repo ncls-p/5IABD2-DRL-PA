@@ -7,7 +7,7 @@ from collections import deque
 from src.environments import Environment
 import time
 
-# Q-Network for estimating Q-values
+
 class QNetwork(nn.Module):
     def __init__(self, state_size, action_size, hidden_size=64):
         super(QNetwork, self).__init__()
@@ -20,7 +20,7 @@ class QNetwork(nn.Module):
         x = torch.relu(self.fc2(x))
         return self.fc3(x)
 
-# Replay Buffer to store past experiences
+
 class ReplayBuffer:
     def __init__(self, buffer_size, batch_size):
         self.memory = deque(maxlen=buffer_size)
@@ -35,9 +35,18 @@ class ReplayBuffer:
     def __len__(self):
         return len(self.memory)
 
-# DQN Agent
+
 class DQNAgent:
-    def __init__(self, env: Environment, state_size: int, action_size: int, batch_size=16, gamma=0.95, lr=0.0005, buffer_size=1000):
+    def __init__(
+        self,
+        env: Environment,
+        state_size: int,
+        action_size: int,
+        batch_size=16,
+        gamma=0.95,
+        lr=0.0005,
+        buffer_size=1000,
+    ):
         self.env = env
         self.state_size = state_size
         self.action_size = action_size
@@ -46,18 +55,14 @@ class DQNAgent:
         self.lr = lr
         self.buffer_size = buffer_size
 
-        # CUDA: Check if GPU is available
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        # Neural networks for policy (Q-function) and target Q-function
         self.q_network = QNetwork(state_size, action_size).to(self.device)
         self.target_network = QNetwork(state_size, action_size).to(self.device)
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=lr)
 
-        # Copy weights from the Q-network to the target network
         self.update_target_network()
 
-        # Replay buffer for experience replay
         self.memory = ReplayBuffer(buffer_size=buffer_size, batch_size=batch_size)
 
     def update_target_network(self):
@@ -87,7 +92,7 @@ class DQNAgent:
 
         for episode in range(num_episodes):
             state = self.env.reset()
-            state = self.env.state_vector()  # Obtain vectorized state representation
+            state = self.env.state_vector()
             done = False
             score = 0
             episode_action_times = []
@@ -101,30 +106,28 @@ class DQNAgent:
                 action_time = time.time() - action_start
                 episode_action_times.append(action_time)
 
-                # Store experience in replay buffer
                 self.memory.add((state, action, reward, next_state, done))
                 state = next_state
                 score += reward
 
-                # Sample a random batch from the replay buffer and update the Q-network
                 if len(self.memory) >= self.batch_size:
                     experiences = self.memory.sample()
                     self.learn(experiences)
 
                 episode_steps += 1
 
-            # Decrease epsilon after each episode
             epsilon = max(epsilon_end, epsilon * epsilon_decay)
             scores.append(score)
             steps_per_episode.append(episode_steps)
             action_times.append(np.mean(episode_action_times))
 
-            # Update the target network periodically
             if episode % target_update_freq == 0:
                 self.update_target_network()
 
             if (episode + 1) % 1 == 0:
-                print(f"Episode {episode + 1}/{num_episodes}, Avg Score: {np.mean(scores[-100:]):.2f}")
+                print(
+                    f"Episode {episode + 1}/{num_episodes}, Avg Score: {np.mean(scores[-100:]):.2f}"
+                )
 
         torch.save(
             {
@@ -140,14 +143,12 @@ class DQNAgent:
     def learn(self, experiences):
         states, actions, rewards, next_states, dones = zip(*experiences)
 
-        # Convert list of numpy arrays to numpy arrays
-        states = np.array(states)  # Convert to numpy array first
+        states = np.array(states)
         actions = np.array(actions)
         rewards = np.array(rewards)
         next_states = np.array(next_states)
         dones = np.array(dones)
 
-        # Convert numpy arrays to tensors
         states = torch.FloatTensor(states).to(self.device)
         actions = torch.LongTensor(actions).unsqueeze(1).to(self.device)
         rewards = torch.FloatTensor(rewards).to(self.device)

@@ -10,7 +10,6 @@ import os
 class PolicyNetwork(nn.Module):
     def __init__(self, state_size: int, action_size: int, hidden_size: int = 64):
         super().__init__()
-        # Use a more efficient architecture
         self.network = nn.Sequential(
             nn.Linear(state_size, hidden_size),
             nn.ReLU(),
@@ -42,21 +41,17 @@ class REINFORCEAgent:
         self.optimizer = optim.Adam(self.policy.parameters(), lr=lr)
 
     def train_episode(self, rewards: list, log_probs: list) -> None:
-        # Convert lists to tensors at once
         rewards_tensor = torch.FloatTensor(rewards).to(self.device)
         log_probs_tensor = torch.stack(log_probs)
 
-        # Vectorized returns calculation
         returns = torch.zeros_like(rewards_tensor)
         future_return = 0
         for t in reversed(range(len(rewards))):
             future_return = rewards[t] + self.gamma * future_return
             returns[t] = future_return
 
-        # Normalize returns in one operation
         returns = (returns - returns.mean()) / (returns.std() + 1e-8)
 
-        # Compute loss in one operation
         policy_loss = -(log_probs_tensor * returns).sum()
 
         self.optimizer.zero_grad()
@@ -110,7 +105,6 @@ class REINFORCEAgent:
                 avg_reward = np.mean(episode_rewards[-100:])
                 print(f"Episode {episode + 1}, Average Reward: {avg_reward:.2f}")
 
-        # Save final model
         final_path = os.path.join('model', 'reinforce',
                                  self.env_name,
                                  f'final_model.pt')

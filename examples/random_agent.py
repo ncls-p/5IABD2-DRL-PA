@@ -28,12 +28,11 @@ def play_episodes(env, agent1, agent2, num_episodes: int = 1000) -> PerformanceM
         done = False
         episode_length = 0
 
-        # Randomize which agent plays first
         if isinstance(env, Farkle):
             current_agent = agent1 if np.random.rand() < 0.5 else agent2
             env.current_player = 1 if current_agent == agent1 else 2
         elif isinstance(env, TicTacToe):
-            current_agent = agent1  # For TicTacToe, alternate moves between agents
+            current_agent = agent1
             env.current_player = 1
         else:
             current_agent = agent1
@@ -55,11 +54,11 @@ def play_episodes(env, agent1, agent2, num_episodes: int = 1000) -> PerformanceM
             total_reward = env.scores[0] - env.scores[1]
         elif isinstance(env, TicTacToe):
             if env.winner == 1:
-                total_reward = 1  # Agent1 wins
+                total_reward = 1
             elif env.winner == 2:
-                total_reward = -1  # Agent2 wins
+                total_reward = -1
             else:
-                total_reward = 0  # Draw
+                total_reward = 0
         else:
             total_reward = reward
 

@@ -41,16 +41,13 @@ def run_dqn_example(env_class, env_name, num_episodes=10000):
 
     scores, steps_per_episode, action_times = agent.train(num_episodes=num_episodes)
 
-    # Plot scores
-    """plt.figure(figsize=(15, 7))
+    plt.figure(figsize=(15, 7))
     plt.subplot(3, 1, 1)
     plot_metrics(scores, "Scores", env_name)
 
-    # Plot steps per episode
     plt.subplot(3, 1, 2)
     plot_metrics(steps_per_episode, "Steps per Episode", env_name)
 
-    # Plot action execution times
     plt.subplot(3, 1, 3)
     plot_metrics(action_times, "Average Action Time (seconds)", env_name)
 
@@ -58,7 +55,7 @@ def run_dqn_example(env_class, env_name, num_episodes=10000):
     plt.savefig(
         f"src/metrics/plot/dqn/dqn_{env_name.lower().replace(' ', '_')}_metrics.png"
     )
-    plt.close()"""
+    plt.close()
 
     return scores, steps_per_episode, action_times
 

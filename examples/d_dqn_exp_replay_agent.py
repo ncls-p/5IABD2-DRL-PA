@@ -116,24 +116,19 @@ def main():
             env_class, env_name
         )
 
-        # Create a figure with three subplots
         plt.figure(figsize=(15, 12))
 
-        # Plot scores
         plt.subplot(3, 1, 1)
         plot_metrics(scores, "Scores", env_name)
 
-        # Plot steps per episode
         plt.subplot(3, 1, 2)
         plot_metrics(steps_per_episode, "Steps per Episode", env_name)
 
-        # Plot action times
         plt.subplot(3, 1, 3)
         plot_metrics(action_times, "Action Time (seconds)", env_name)
 
         plt.tight_layout()
 
-        # Save the figure
         plt.savefig(
             f"src/metrics/plot/d_dqn_exp_rep/ddqn_exp_rep_{env_name.lower().replace(' ', '_')}_metrics.png"
         )

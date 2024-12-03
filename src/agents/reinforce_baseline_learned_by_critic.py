@@ -16,11 +16,11 @@ class ValueNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
-            nn.Linear(hidden_size, 1)  # Output a scalar value
+            nn.Linear(hidden_size, 1),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.network(x).squeeze(-1)  # Squeeze to produce a single value
+        return self.network(x).squeeze(-1)
 
 
 class REINFORCEBaselineLearnedByCriticAgent:
@@ -40,11 +40,9 @@ class REINFORCEBaselineLearnedByCriticAgent:
         self.gamma = gamma
         self.device = device
 
-        # Policy network (Actor)
         self.policy = PolicyNetwork(state_size, action_size).to(device)
         self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=lr_policy)
 
-        # Value network (Critic)
         self.value_network = ValueNetwork(state_size).to(device)
         self.value_optimizer = optim.Adam(self.value_network.parameters(), lr=lr_value)
 
@@ -64,24 +62,20 @@ class REINFORCEBaselineLearnedByCriticAgent:
         log_probs_tensor = torch.stack(log_probs)
         states_tensor = torch.FloatTensor(states).to(self.device)
 
-        # Compute returns and advantages
         returns = torch.zeros_like(rewards_tensor)
         future_return = 0
         for t in reversed(range(len(rewards))):
             future_return = rewards[t] + self.gamma * future_return
             returns[t] = future_return
 
-        # Compute value estimates and advantages
         values = self.value_network(states_tensor)
         advantages = returns - values
 
-        # Update value network (Critic)
         value_loss = advantages.pow(2).mean()
         self.value_optimizer.zero_grad()
         value_loss.backward()
         self.value_optimizer.step()
 
-        # Update policy network (Actor)
         policy_loss = -(log_probs_tensor * advantages.detach()).sum()
         self.policy_optimizer.zero_grad()
         policy_loss.backward()

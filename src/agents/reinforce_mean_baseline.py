@@ -20,7 +20,7 @@ class ValueNetwork(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.network(x).squeeze(-1)  # Output a scalar value
+        return self.network(x).squeeze(-1)
 
 
 class REINFORCEwithBaselineAgent(REINFORCEAgent):
@@ -44,24 +44,20 @@ class REINFORCEwithBaselineAgent(REINFORCEAgent):
         log_probs_tensor = torch.stack(log_probs)
         states_tensor = torch.FloatTensor(states).to(self.device)
 
-        # Compute returns
         returns = torch.zeros_like(rewards_tensor)
         future_return = 0
         for t in reversed(range(len(rewards))):
             future_return = rewards[t] + self.gamma * future_return
             returns[t] = future_return
 
-        # Get value estimates and compute advantages
         values = self.value_network(states_tensor)
         advantages = returns - values.detach()
 
-        # Update value network
         value_loss = nn.MSELoss()(values, returns)
         self.value_optimizer.zero_grad()
         value_loss.backward()
         self.value_optimizer.step()
 
-        # Update policy network
         policy_loss = -(log_probs_tensor * advantages).sum()
         self.optimizer.zero_grad()
         policy_loss.backward()

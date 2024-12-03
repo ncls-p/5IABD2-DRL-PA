@@ -16,7 +16,6 @@ from src.environments.tic_tac_toe import TicTacToe
 def plot_metrics(data, title, env_name, window_size=100):
     plt.plot(data, color="gray", alpha=0.3, label="Raw")
 
-    # Calculate moving average
     moving_avg = np.convolve(data, np.ones(window_size) / window_size, mode="valid")
     plt.plot(
         range(window_size - 1, len(data)),
@@ -25,7 +24,6 @@ def plot_metrics(data, title, env_name, window_size=100):
         label=f"{window_size}-Episode Moving Average",
     )
 
-    # Add milestone markers
     milestones = [1000, 10000, 100000, 1000000]
     for milestone in milestones:
         if milestone <= len(data):
@@ -93,7 +91,6 @@ def run_ppo_example(
     print(f"Average Steps (last 100): {np.mean(steps_per_episode[-100:]):.2f}")
     print(f"Average Action Time (last 100): {np.mean(action_times[-100:]):.4f}s\n")
 
-    # Create plots
     plt.figure(figsize=(15, 12))
 
     plt.subplot(3, 1, 1)
@@ -119,7 +116,6 @@ def run_ppo_example(
 def main():
     os.makedirs("src/metrics/plot/ppo", exist_ok=True)
 
-    # Environment-specific configurations for PPO
     env_configs_ppo = {
         # (LineWorld, "Line World"): {
         #     "num_episodes": 100000,

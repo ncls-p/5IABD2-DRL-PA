@@ -54,7 +54,6 @@ def run_tab_q_learn_example(env_class, env_name, num_episodes=10000):
     epsilon_min = 0.01
     epsilon_decay = 0.995
 
-    # Initialize agent
     agent = TabularQLearningAgent(
         env=env,
         learning_rate=learning_rate,
@@ -64,21 +63,16 @@ def run_tab_q_learn_example(env_class, env_name, num_episodes=10000):
         epsilon_decay=epsilon_decay,
     )
 
-    # Train the agent
     scores, steps_per_episode, action_times = agent.train(num_episodes=num_episodes)
 
-    # Create a figure with three subplots
     plt.figure(figsize=(15, 12))
 
-    # Plot scores
     plt.subplot(3, 1, 1)
     plot_metrics(scores, "Scores", env_name)
 
-    # Plot steps per episode
     plt.subplot(3, 1, 2)
     plot_metrics(steps_per_episode, "Steps per Episode", env_name)
 
-    # Plot action times
     plt.subplot(3, 1, 3)
     plot_metrics(action_times, "Action Time (seconds)", env_name)
 
@@ -88,7 +82,6 @@ def run_tab_q_learn_example(env_class, env_name, num_episodes=10000):
     )
     plt.close()
 
-    # Print score statistics at milestones
     print_scores_at_milestones(scores, env_name)
 
     return scores, steps_per_episode, action_times
@@ -104,7 +97,6 @@ def print_scores_at_milestones(scores, env_name):
 
 
 def main():
-    # Create metrics directory if it doesn't exist
     os.makedirs("src/metrics/plot/tab_q_learn", exist_ok=True)
 
     # Run Q-learning on each environment

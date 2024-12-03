@@ -12,10 +12,10 @@ class RandomRolloutAgent:
     def __init__(
         self,
         env: Environment,
-        num_rollouts: int = 100,  # Nombre de simulations par action
+        num_rollouts: int = 100,
         gamma: float = 0.99,
         env_name: str = "DefaultEnv",
-        device: str = "cuda" if torch.cuda.is_available() else "cpu"
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ):
         self.env = env
         self.num_rollouts = num_rollouts
@@ -37,7 +37,6 @@ class RandomRolloutAgent:
         steps = 0
 
         while not done and steps < max_steps:
-            # Choisir une action aléatoire
             available_actions = sim_env.available_actions()
             if len(available_actions) == 0:
                 break
@@ -59,12 +58,10 @@ class RandomRolloutAgent:
 
         action_values = []
 
-        # Effectuer plusieurs simulations pour chaque action possible
         for action in available_actions:
             sim_env = self.copy_environment(self.env)
             sim_env.step(action)
 
-            # Moyenne des récompenses sur plusieurs simulations
             action_value = 0
             for _ in range(self.num_rollouts):
                 value = self.simulate(sim_env, state)
@@ -123,7 +120,6 @@ class RandomRolloutAgent:
             steps_per_episode.append(episode_steps)
             action_times.append(np.mean(episode_action_times))
 
-            # Print detailed metrics every episode
             if (episode + 1) % 1 == 0:
                 avg_score = (
                     np.mean(scores[-100:]) if len(scores) >= 100 else np.mean(scores)

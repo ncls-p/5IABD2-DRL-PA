@@ -58,7 +58,7 @@ class PPOAgent:
     ):
         self.env = env
         self.gamma = gamma
-        self.lamda = lamda  # For GAE
+        self.lamda = lamda
         self.clip_epsilon = clip_epsilon
         self.epochs = epochs
         self.batch_size = batch_size
@@ -86,7 +86,6 @@ class PPOAgent:
 
     def save_model(self, episode: int, save_dir: str = "./checkpoints"):
         """Save model weights to disk"""
-        # Create path with model and environment names
         model_name = "ppo"
         env_name = self.env.__class__.__name__.lower()
         save_dir = os.path.join(save_dir, model_name, env_name)
@@ -101,7 +100,6 @@ class PPOAgent:
         save_path = os.path.join(save_dir, f"checkpoint_episode_{episode}.pt")
         torch.save(checkpoint, save_path)
 
-        # Keep only last 10 checkpoints
         checkpoints = sorted(
             glob.glob(os.path.join(save_dir, "checkpoint_episode_*.pt"))
         )
@@ -117,7 +115,7 @@ class PPOAgent:
         action_times = []
         log_frequency = 1
 
-        checkpoint_frequency = 1000  # Save every 1000 episodes
+        checkpoint_frequency = 1000
 
         for episode in range(num_episodes):
             state = self.env.reset()
@@ -131,7 +129,6 @@ class PPOAgent:
             episode_steps = 0
             episode_action_times = []
 
-            # Initialize storage
             states = []
             actions = []
             rewards = []
@@ -154,7 +151,6 @@ class PPOAgent:
                     next_state, num_classes=self.env.num_states()
                 ).float()
 
-                # Store transitions directly as tensors
                 states.append(state)
                 actions.append(torch.tensor(action).to(self.device))
                 rewards.append(
@@ -167,7 +163,6 @@ class PPOAgent:
                 episode_steps += 1
                 state = next_state
 
-            # Stack all episode data
             with torch.no_grad():
                 batch_states = torch.stack(states).to(self.device)
                 batch_values = self.value(batch_states).view(-1)
@@ -178,7 +173,6 @@ class PPOAgent:
             batch_dones = torch.stack(dones)
             batch_log_probs = torch.stack(log_probs)
 
-            # Compute advantages using GAE
             advantages = []
             gae = 0
             for i in reversed(range(len(batch_rewards))):
@@ -195,7 +189,6 @@ class PPOAgent:
             returns = advantages + batch_values
             advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-            # PPO update loop
             for _ in range(self.epochs):
                 indices = np.random.permutation(len(batch_states))
 
@@ -203,20 +196,17 @@ class PPOAgent:
                     end_idx = start_idx + self.batch_size
                     batch_indices = indices[start_idx:end_idx]
 
-                    # Get mini-batch data
                     mini_batch_states = batch_states[batch_indices]
                     mini_batch_actions = batch_actions[batch_indices]
                     mini_batch_log_probs = batch_log_probs[batch_indices]
                     mini_batch_advantages = advantages[batch_indices]
                     mini_batch_returns = returns[batch_indices]
 
-                    # Policy update
                     new_probs = self.policy(mini_batch_states)
                     dist = Categorical(new_probs)
                     new_log_probs = dist.log_prob(mini_batch_actions)
                     entropy = dist.entropy().mean()
 
-                    # Calculate losses
                     ratio = torch.exp(new_log_probs - mini_batch_log_probs)
                     surrogate1 = ratio * mini_batch_advantages
                     surrogate2 = (
@@ -230,17 +220,14 @@ class PPOAgent:
                     )
                     loss = policy_loss + 0.5 * value_loss - 0.01 * entropy
 
-                    # Optimize
                     self.optimizer.zero_grad()
                     loss.backward()
                     self.optimizer.step()
 
-            # Update tracking metrics
             episode_rewards.append(episode_reward)
             steps_per_episode.append(episode_steps)
             action_times.append(np.mean(episode_action_times))
 
-            # Logging
             if (episode + 1) % log_frequency == 0:
                 avg_reward = np.mean(episode_rewards[-log_frequency:])
                 avg_steps = np.mean(steps_per_episode[-log_frequency:])
@@ -252,7 +239,6 @@ class PPOAgent:
                     f"Avg Action Time: {avg_action_time:.4f}s"
                 )
 
-            # Add checkpoint saving after metrics update
             if (episode + 1) % checkpoint_frequency == 0:
                 self.save_model(episode + 1)
                 logger.info(f"Saved model checkpoint at episode {episode + 1}")

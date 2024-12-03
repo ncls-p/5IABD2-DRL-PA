@@ -93,12 +93,12 @@ def run_reinforce_example(
     writer = create_tensorboard_writer(env_name)
     writer.add_hparams(
         {
-            'learning_rate': learning_rate,
-            'gamma': gamma,
-            'hidden_size': hidden_size,
-            'num_episodes': num_episodes,
+            "learning_rate": learning_rate,
+            "gamma": gamma,
+            "hidden_size": hidden_size,
+            "num_episodes": num_episodes,
         },
-        {'dummy': 0}  # Required placeholder metric
+        {"dummy": 0},
     )
 
     for episode in range(num_episodes):
@@ -138,13 +138,16 @@ def run_reinforce_example(
         steps_per_episode.append(episode_steps)
         action_times.append(np.mean(episode_action_times))
 
-        # Log metrics to tensorboard
-        writer.add_scalar('Metrics/Episode_Reward', episode_reward, episode)
-        writer.add_scalar('Metrics/Steps_per_Episode', episode_steps, episode)
-        writer.add_scalar('Metrics/Average_Action_Time', np.mean(episode_action_times), episode)
+        writer.add_scalar("Metrics/Episode_Reward", episode_reward, episode)
+        writer.add_scalar("Metrics/Steps_per_Episode", episode_steps, episode)
+        writer.add_scalar(
+            "Metrics/Average_Action_Time", np.mean(episode_action_times), episode
+        )
 
         if len(scores) >= 100:
-            writer.add_scalar('Metrics/Average_100_Episodes_Reward', np.mean(scores[-100:]), episode)
+            writer.add_scalar(
+                "Metrics/Average_100_Episodes_Reward", np.mean(scores[-100:]), episode
+            )
 
         if (episode + 1) % 100 == 0:
             avg_score = np.mean(scores[-100:])
@@ -158,11 +161,9 @@ def run_reinforce_example(
             )
 
         if (episode + 1) % 10000 == 0:
-            # Create base model directory if it doesn't exist
-            base_dir = os.path.join(os.getcwd(), 'model', 'reinforce', env_name)
+            base_dir = os.path.join(os.getcwd(), "model", "reinforce", env_name)
             os.makedirs(base_dir, exist_ok=True)
 
-            # Save checkpoint
             checkpoint_path = os.path.join(base_dir, f'checkpoint_{episode+1}.pt')
 
             checkpoint = {

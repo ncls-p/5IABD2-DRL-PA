@@ -17,7 +17,6 @@ from src.environments.tic_tac_toe import TicTacToe
 def plot_metrics(data, title, env_name, window_size=100):
     plt.plot(data, color="gray", alpha=0.3, label="Raw")
 
-    # Calculate moving average
     moving_avg = np.convolve(data, np.ones(window_size) / window_size, mode="valid")
     plt.plot(
         range(window_size - 1, len(data)),

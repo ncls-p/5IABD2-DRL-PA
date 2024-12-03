@@ -46,9 +46,9 @@ class PlayerAgent:
         while True:
             action = console.input("[bold cyan]Your move: [/]").lower()
             if action == "q" and 0 in available_actions:
-                return 0  # Left
+                return 0
             elif action == "d" and 1 in available_actions:
-                return 1  # Right
+                return 1
             else:
                 console.print(
                     "[bold red]Invalid move. Please choose a valid direction.[/]"
@@ -61,13 +61,13 @@ class PlayerAgent:
         while True:
             action = console.input("[bold cyan]Your move: [/]").lower()
             if action == "z" and 0 in available_actions:
-                return 0  # Up
+                return 0
             elif action == "q" and 3 in available_actions:
-                return 3  # Left
+                return 3
             elif action == "s" and 2 in available_actions:
-                return 2  # Down
+                return 2
             elif action == "d" and 1 in available_actions:
-                return 1  # Right
+                return 1
             else:
                 console.print(
                     "[bold red]Invalid move. Please choose a valid direction.[/]"
@@ -106,12 +106,10 @@ class PlayerAgent:
                     if not choice:
                         print("Invalid choice. Please try again.")
                         continue
-                    # Convert input like "136" to action number
                     kept_dice = [int(x) for x in choice if x.isdigit()]
                     if not all(1 <= x <= 6 for x in kept_dice):
                         print("Invalid dice positions. Use numbers 1-6.")
                         continue
-                    # Convert to binary action
                     action = sum(2 ** (x - 1) for x in kept_dice)
                     if action in available_actions:
                         return action
@@ -150,7 +148,6 @@ class PlayerAgent:
     @staticmethod
     def format_dice(dice: np.ndarray) -> str:
         dice_faces = [
-            # Dice faces representations
             ["┌─────────┐", "│         │", "│    ●    │", "│         │", "└─────────┘"],
             [
                 "┌─────────┐",
@@ -197,11 +194,11 @@ def display_line_world(env: LineWorld):
     target_position = env.target_position
     for i in range(env.size):
         if i == current_state:
-            row[i] = "🚶"  # Player icon
+            row[i] = "🚶"
         elif i == target_position:
-            row[i] = "🎯"  # Target icon
+            row[i] = "🎯"
         else:
-            row[i] = "⬜"  # Empty space
+            row[i] = "⬜"
     table.add_row(*row)
     return table
 
@@ -213,11 +210,11 @@ def display_grid_world(env: GridWorld):
         row = []
         for x in range(env.size):
             if (x, y) == current_state:
-                row.append("🚶")  # Player icon
+                row.append("🚶")
             elif (x, y) == env.goal:
-                row.append("🏁")  # Goal icon
+                row.append("🏁")
             else:
-                row.append("  ")  # Empty space
+                row.append("  ")
         table.add_row(*row)
         if y < env.size - 1:
             table.add_row(*["─" * 2 for _ in range(env.size)])
@@ -280,8 +277,7 @@ def play_game(
         while not done:
             console.print(display_tic_tac_toe(env))
 
-            # Print state vector
-            console.print(f"[bold blue]State vector: {env.state_vector()}[/]")
+            # console.print(f"[bold blue]State vector: {env.state_vector()}[/]")
 
             if env.current_player == human_player:
                 console.print(
@@ -299,7 +295,6 @@ def play_game(
                     f"[bold yellow]AI Player {env.current_player} chose action: {action}[/]"
                 )
 
-            # Print action vector
             console.print(f"[bold blue]Action vector: {env.action_vector(action)}[/]")
 
             _, reward, done, info = env.step(action)
@@ -323,7 +318,6 @@ def play_game(
             else:
                 console.print(display_grid_world(env))
 
-            # Print state vector
             console.print(f"[bold blue]State vector: {env.state_vector()}[/]")
 
             console.print(
@@ -337,7 +331,6 @@ def play_game(
             action_names = ["Up", "Right", "Down", "Left"]
             console.print(f"[bold cyan]You moved: {action_names[action]}[/]")
 
-            # Print action vector
             console.print(f"[bold blue]Action vector: {env.action_vector(action)}[/]")
 
             _, reward, done, info = env.step(action)

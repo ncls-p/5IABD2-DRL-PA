@@ -19,12 +19,11 @@ class TabularQLearningAgent:
         self.state_size = self.env.num_states()
         self.action_size = self.env.num_actions()
         self.learning_rate = learning_rate
-        self.gamma = gamma  # discount factor
-        self.epsilon = epsilon_start  # initial exploration rate
-        self.epsilon_min = epsilon_min  # minimum exploration rate
-        self.epsilon_decay = epsilon_decay  # exploration decay rate
+        self.gamma = gamma
+        self.epsilon = epsilon_start
+        self.epsilon_min = epsilon_min
+        self.epsilon_decay = epsilon_decay
 
-        # Initialize Q-table with zeros
         self.q_table = np.zeros((self.state_size, self.action_size))
 
     def choose_action(self, state):
@@ -55,7 +54,6 @@ class TabularQLearningAgent:
                 next_state, reward, done, _ = self.env.step(action)
                 steps += 1
 
-                # Q-learning update rule
                 best_next_action = np.argmax(self.q_table[next_state])
                 td_target = (
                     reward + self.gamma * self.q_table[next_state, best_next_action]
@@ -66,7 +64,6 @@ class TabularQLearningAgent:
                 state = next_state
                 score += reward
 
-            # Decay epsilon after each episode
             self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
             scores.append(score)
             steps_per_episode.append(steps)
@@ -95,7 +92,7 @@ class TabularQLearningAgent:
             score = 0
 
             while not done:
-                action = np.argmax(self.q_table[state])  # Exploit learned policy
+                action = np.argmax(self.q_table[state])
                 state, reward, done, _ = self.env.step(action)
                 score += reward
             total_score += score
