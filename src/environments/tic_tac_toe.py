@@ -11,10 +11,8 @@ class TicTacToe(Environment):
         self.board: np.ndarray = np.zeros((3, 3), dtype=int)
         self.current_player: int = 1
         self.done: bool = False
-        self.winner: Optional[int] = (
-            None  # 1 for player 1, 2 for player 2, None for no winner
-        )
-    
+        self.winner: Optional[int] = None
+
     def env_name(self):
         return "tic_tac_toe"
 
@@ -36,7 +34,7 @@ class TicTacToe(Environment):
 
     def reward(self, i: int) -> float:
         """Get the reward value for a given reward index."""
-        rewards = [0.0, 0.5, 1.0]  # Draw, Loss, Win
+        rewards = [0.0, 0.5, 1.0]
         return rewards[i]
 
     def p(self, s: int, a: int, s_p: int, r_index: int) -> float:
@@ -46,17 +44,16 @@ class TicTacToe(Environment):
         row, col = divmod(a, 3)
 
         if board[row, col] != 0:
-            # Invalid move
             return 1.0 if s_p == s and r_index == 0 else 0.0
 
         board[row, col] = self.current_player
         if np.array_equal(board, next_board):
             if self._check_win(board, self.current_player):
-                return 1.0 if r_index == 2 else 0.0  # Win
+                return 1.0 if r_index == 2 else 0.0
             elif np.all(board != 0):
-                return 1.0 if r_index == 0 else 0.0  # Draw
+                return 1.0 if r_index == 0 else 0.0
             else:
-                return 1.0 if r_index == 0 else 0.0  # Ongoing game
+                return 1.0 if r_index == 0 else 0.0
         return 0.0
 
     def state_id(self) -> int:
@@ -96,7 +93,6 @@ class TicTacToe(Environment):
             return self.state_id(), 0.0, True, {}
 
         if self.is_forbidden(action):
-            # Invalid action
             return self.state_id(), 0.0, False, {}
 
         row, col = divmod(action, 3)
@@ -109,10 +105,10 @@ class TicTacToe(Environment):
         elif np.all(self.board != 0):
             self.done = True
             self.winner = None
-            reward = 0.0  # Draw
+            reward = 0.0
         else:
             reward = 0.0
-            self.current_player = 3 - self.current_player  # Switch player
+            self.current_player = 3 - self.current_player
 
         return (
             self.state_id(),
@@ -170,12 +166,11 @@ class TicTacToe(Environment):
             TicTacToe: A new TicTacToe environment with a random state.
         """
         env = TicTacToe()
-        num_moves = np.random.randint(0, 5)  # Limit moves to 0 to 4
+        num_moves = np.random.randint(0, 5)
         players = [1, 2]
         current_player = np.random.choice(players)
         env.current_player = current_player
 
-        # Simulate random moves up to num_moves
         for _ in range(num_moves):
             available_actions = env.available_actions()
             if len(available_actions) == 0:
@@ -183,9 +178,8 @@ class TicTacToe(Environment):
             action = np.random.choice(available_actions)
             env.step(action)
             if env.done:
-                break  # Stop if the game is over
+                break
 
-        # Set the current player for the next move
         if not env.done:
             env.current_player = 3 - env.current_player
 

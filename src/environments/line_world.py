@@ -13,7 +13,7 @@ class LineWorld(Environment):
         self.done = False
         self.score_value = 0
         self.target_position = size - 1
-    
+
     def env_name(self):
         return "line_world"
 
@@ -27,7 +27,7 @@ class LineWorld(Environment):
 
     def num_actions(self) -> int:
         """Get the number of possible actions in the environment."""
-        return 2  # 0: left, 1: right
+        return 2
 
     def num_rewards(self) -> int:
         """Get the number of possible rewards in the environment."""
@@ -35,7 +35,7 @@ class LineWorld(Environment):
 
     def reward(self, i: int) -> float:
         """Get the reward value for a given reward index."""
-        rewards = [-1.0, 0.0, 1.0]  # -1: move, 0: invalid move, 1: goal
+        rewards = [-1.0, 0.0, 1.0]
         return rewards[i]
 
     def p(self, s: int, a: int, s_p: int, r_index: int) -> float:
@@ -43,9 +43,9 @@ class LineWorld(Environment):
         if self.is_game_over():
             return 0.0
 
-        if a == 0:  # left
+        if a == 0:
             s_new = s - 1
-        elif a == 1:  # right
+        elif a == 1:
             s_new = s + 1
         else:
             return 0.0
@@ -59,7 +59,6 @@ class LineWorld(Environment):
             else:
                 return 0.0
         else:
-            # Invalid move
             return 1.0 if s_p == s and r_index == 1 else 0.0
 
     def state_id(self) -> int:
@@ -83,9 +82,9 @@ class LineWorld(Environment):
 
     def is_forbidden(self, action: int) -> int:
         """Check if an action is forbidden in the current state."""
-        if action == 0 and self.state == 0:  # left
+        if action == 0 and self.state == 0:
             return 1
-        elif action == 1 and self.state == self.size - 1:  # right
+        elif action == 1 and self.state == self.size - 1:
             return 1
         else:
             return 0
@@ -104,12 +103,11 @@ class LineWorld(Environment):
             return self.state, 0.0, True, {}
 
         if self.is_forbidden(action):
-            # Invalid move
             reward = 0.0
         else:
-            if action == 0:  # left
+            if action == 0:
                 self.state -= 1
-            elif action == 1:  # right
+            elif action == 1:
                 self.state += 1
 
             if self.state == self.target_position:

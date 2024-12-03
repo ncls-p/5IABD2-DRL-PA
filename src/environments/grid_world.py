@@ -15,7 +15,7 @@ class GridWorld(Environment):
         self.wall = (1, 1)
         self.done = False
         self.score_value = 0
-    
+
     def env_name(self):
         return "grid_world"
 
@@ -29,7 +29,7 @@ class GridWorld(Environment):
 
     def num_actions(self) -> int:
         """Get the number of possible actions in the environment."""
-        return 4  # 0: up, 1: right, 2: down, 3: left
+        return 4
 
     def num_rewards(self) -> int:
         """Get the number of possible rewards in the environment."""
@@ -37,7 +37,7 @@ class GridWorld(Environment):
 
     def reward(self, i: int) -> float:
         """Get the reward value for a given reward index."""
-        rewards = [-1.0, 0.0, 1.0]  # -1: move, 0: invalid move, 1: goal
+        rewards = [-1.0, 0.0, 1.0]
         return rewards[i]
 
     def p(
@@ -50,13 +50,13 @@ class GridWorld(Environment):
         if self.is_game_over():
             return 0.0
 
-        if a == 0:  # up
+        if a == 0:
             x_new, y_new = x, y - 1
-        elif a == 1:  # right
+        elif a == 1:
             x_new, y_new = x + 1, y
-        elif a == 2:  # down
+        elif a == 2:
             x_new, y_new = x, y + 1
-        elif a == 3:  # left
+        elif a == 3:
             x_new, y_new = x - 1, y
         else:
             return 0.0
@@ -70,7 +70,6 @@ class GridWorld(Environment):
             else:
                 return 0.0
         else:
-            # Invalid move, stays in the same state
             return 1.0 if (x_p, y_p) == (x, y) and r_index == 1 else 0.0
 
     def state_id(self) -> int:
@@ -102,21 +101,21 @@ class GridWorld(Environment):
     def is_forbidden(self, action: int) -> int:
         """Check if an action is forbidden in the current state."""
         x, y = self.state
-        if action == 0 and y == 0:  # up
+        if action == 0 and y == 0:
             return 1
-        elif action == 1 and x == self.size - 1:  # right
+        elif action == 1 and x == self.size - 1:
             return 1
-        elif action == 2 and y == self.size - 1:  # down
+        elif action == 2 and y == self.size - 1:
             return 1
-        elif action == 3 and x == 0:  # left
+        elif action == 3 and x == 0:
             return 1
-        elif action == 0 and (x, y - 1) == self.wall:  # wall -> up
+        elif action == 0 and (x, y - 1) == self.wall:
             return 1
-        elif action == 1 and (x + 1, y) == self.wall:  # wall -> right
+        elif action == 1 and (x + 1, y) == self.wall:
             return 1
-        elif action == 2 and (x, y + 1) == self.wall:  # wall -> down
+        elif action == 2 and (x, y + 1) == self.wall:
             return 1
-        elif action == 3 and (x - 1, y) == self.wall:  # wall -> left
+        elif action == 3 and (x - 1, y) == self.wall:
             return 1
         else:
             return 0
@@ -137,18 +136,17 @@ class GridWorld(Environment):
             return self.state_id(), 0.0, True, {}
 
         if self.is_forbidden(action):
-            # Invalid move
             reward = 0.0
             next_state = self.state
         else:
             x, y = self.state
-            if action == 0:  # up
+            if action == 0:
                 y -= 1
-            elif action == 1:  # right
+            elif action == 1:
                 x += 1
-            elif action == 2:  # down
+            elif action == 2:
                 y += 1
-            elif action == 3:  # left
+            elif action == 3:
                 x -= 1
             next_state = (x, y)
 

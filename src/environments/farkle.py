@@ -23,10 +23,10 @@ class Farkle(Environment):
         self.hot_dice = False
         self.target_score = target_score
         self.current_player = 1
-        self.scores = [0, 0]  # Scores for player 1 and player 2
+        self.scores = [0, 0]
         self.final_round = False
         self.final_round_starter = None
-    
+
     def env_name(self):
         return "farkle"
 
@@ -52,7 +52,7 @@ class Farkle(Environment):
         Returns:
             int: The number of actions (64 possible combinations of keeping dice + 2 for roll and bank).
         """
-        return 66  # 2^6 possible combinations of keeping dice + 2 for roll and bank
+        return 66
 
     def num_rewards(self) -> int:
         """
@@ -61,7 +61,7 @@ class Farkle(Environment):
         Returns:
             int: The number of rewards.
         """
-        return 3  # Lose (-1), No score (0), Win (1)
+        return 3
 
     def reward(self, i: int) -> float:
         """
@@ -145,10 +145,10 @@ class Farkle(Environment):
         Returns:
             np.ndarray: An array of available actions (-1 for banking, 0 for rolling, 1+ for keeping dice).
         """
-        if not hasattr(self, 'dice_visible') or not self.dice_visible:
-            return np.array([-1, 0], dtype=int)  # Only bank or roll when dice aren't visible
-            
-        actions = [-1]  # -1 for banking
+        if not hasattr(self, "dice_visible") or not self.dice_visible:
+            return np.array([-1, 0], dtype=int)
+
+        actions = [-1]
         num_dice = len(self.dice)
         max_action = 2**num_dice
         for a in range(1, max_action):
@@ -179,9 +179,9 @@ class Farkle(Environment):
                 {"current_player": self.current_player},
             )
 
-        reward = 0.0  # Default reward for non-terminal steps
+        reward = 0.0
 
-        if action == -1:  # Bank points
+        if action == -1:
             self.scores[self.current_player - 1] += self.turn_score
             self.turn_score = 0
             self.dice = np.random.randint(1, 7, size=6)
@@ -214,8 +214,8 @@ class Farkle(Environment):
                 False,
                 {"current_player": self.current_player},
             )
-            
-        elif action == 0:  # Roll dice
+
+        elif action == 0:
             self.dice_visible = True
             if self._is_farkle():
                 self.turn_score = 0
@@ -228,9 +228,13 @@ class Farkle(Environment):
                     False,
                     {"current_player": self.current_player},
                 )
-            return self.state_id(), reward, False, {"current_player": self.current_player}
+            return (
+                self.state_id(),
+                reward,
+                False,
+                {"current_player": self.current_player},
+            )
 
-        # Handle keeping dice (action > 0)
         kept_dice = self._action_to_kept_dice(action)
         if not self._is_valid_keep(kept_dice):
             self.turn_score = 0
@@ -252,7 +256,6 @@ class Farkle(Environment):
             self.hot_dice = True
             remaining_dice = 6
 
-        # Roll the remaining dice
         self.dice = np.random.randint(1, 7, size=remaining_dice)
         self.dice_visible = False
 
@@ -320,7 +323,6 @@ class Farkle(Environment):
         if len(dice_values) == 0:
             return False
         if len(dice_values) == len(self.dice):
-            # Only allow keeping all dice if it's a straight or three pairs
             dice_counts = np.bincount(dice_values, minlength=7)[1:]
             if not (
                 np.array_equal(dice_counts, [1, 1, 1, 1, 1, 1])
@@ -337,23 +339,20 @@ class Farkle(Environment):
             return 0
         dice_counts = np.bincount(dice_values, minlength=7)[1:]
 
-        # Check for special combinations first
         if len(dice_values) == 6:
-            if np.array_equal(dice_counts, [1, 1, 1, 1, 1, 1]):  # Straight
+            if np.array_equal(dice_counts, [1, 1, 1, 1, 1, 1]):
                 return 1500
-            elif np.sum(dice_counts == 2) == 3:  # Three pairs
+            elif np.sum(dice_counts == 2) == 3:
                 return 1500
 
-        # Score three or more of a kind
         for i, count in enumerate(dice_counts, 1):
             if count >= 3:
                 base_score = 1000 if i == 1 else i * 100
                 score += base_score * (2 ** (count - 3))
-                dice_counts[i - 1] = 0  # Remove these dice from further scoring
+                dice_counts[i - 1] = 0
 
-        # Score remaining 1s and 5s
-        score += dice_counts[0] * 100  # Remaining 1s
-        score += dice_counts[4] * 50  # Remaining 5s
+        score += dice_counts[0] * 100
+        score += dice_counts[4] * 50
 
         return score
 
@@ -382,14 +381,12 @@ class Farkle(Environment):
         Returns:
             np.ndarray: The state vector containing essential information.
         """
-        # Counts of each dice value (1-6)
         dice_counts = np.bincount(self.dice, minlength=7)[1:]
-        # State vector with essential information
         state = np.concatenate(
             [
-                dice_counts,  # Dice counts
-                [self.turn_score],  # Current turn score
-                [self.scores[self.current_player - 1]],  # Current player's total score
+                dice_counts,
+                [self.turn_score],
+                [self.scores[self.current_player - 1]],
             ]
         )
         return state.astype(float)
@@ -423,23 +420,18 @@ class Farkle(Environment):
         next_dice = self._int_to_dice(s_p)
         kept_dice = self._action_to_kept_dice(a)
 
-        # Check if the action is valid for the current state
         if not self._is_valid_keep(kept_dice):
             return 1.0 if s == s_p and r_index == 0 else 0.0
 
-        # Calculate the number of dice to be rerolled
         reroll_count = 6 - np.sum(kept_dice)
         if reroll_count == 0:
             reroll_count = 6
 
-        # Check if the next state is possible given the action
         if not np.all(next_dice[:reroll_count] == current_dice[kept_dice is False]):
             return 0.0
 
-        # Calculate the probability of rolling the specific dice values
         prob = (1 / 6) ** reroll_count
 
-        # Check if the transition results in scoring
         score = self._calculate_score(kept_dice)
         if score > 0:
             return prob if r_index == 2 else 0.0
