@@ -282,7 +282,7 @@ python examples/train_agent.py
 │   ├── random_agent.py
 │   ├── reinforce_agent.py
 │   ├── reinforce_baseline_learned_by_critic.py
-│   ├── reinforce_mean_baseline_agent.py
+│   ├─�� reinforce_mean_baseline_agent.py
 │   ├── tab_q_learning_agent.py
 │   ├── ppo_agent.py
 ├── src/
@@ -376,5 +376,6 @@ Un jeu de dés où les joueurs doivent accumuler des points en gardant certains 
 
 - **Vecteur d'action** : Un entier représentant l'action choisie :
 
-  - 0 pour banquer (conserver les points accumulés et terminer le tour).
-  - Un entier de 1 à 63 représentant les différentes combinaisons de dés à garder (il y a 2^6 - 1 = 63 combinaisons possibles en gardant au moins un dé).
+  - **-1** pour banquer (conserver les points accumulés et terminer le tour).
+  - **0** pour lancer les dés.
+  - Un entier de **1 à 63** représentant les différentes combinaisons de dés à garder (il y a \(2^6 - 1 = 63\) combinaisons possibles en gardant au moins un dé).
