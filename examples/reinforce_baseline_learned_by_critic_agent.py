@@ -190,7 +190,7 @@ def main():
         #     "gamma": 0.95,
         # },
         (Farkle, "Farkle"): {
-            "num_episodes": 10000,
+            "num_episodes": 1000,
             "lr_policy": 0.001,
             "lr_value": 0.001,
             "gamma": 0.95,
